@@ -86,11 +86,11 @@ if "prestadores" not in st.session_state:
     st.session_state["prestadores"] = carregar_dados()
 
 def main():
-    # Cabeçalho com o Logótipo AKITEM e Menu Superior Direito[cite: 4]
+    # Cabeçalho com o novo Logótipo AKITEM e Menu Superior Direito
     col_logo, col_menu = st.columns([3, 2])
     with col_logo:
-        # Inserção do logótipo oficial fornecido via link
-        st.image("https://cdn.phototourl.com/member/2026-09-30-9a52cae2-f291-4fa9-b34b-dd32ab17d97d.jpg", width=400)[cite: 4]
+        # Inserção do logótipo oficial atualizado via novo link
+        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=400)
     
     with col_menu:
         st.markdown("<div style='text-align: right; padding-top: 20px;'>", unsafe_allow_html=True)
