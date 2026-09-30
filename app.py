@@ -11,33 +11,46 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado (Tema Escuro com Dourado)
+# Estilo CSS personalizado (Fundo Azul Bebê / Azul Clarinho)
 st.markdown("""
     <style>
+    /* Fundo geral da aplicação em azul bebê (#E3F2FD) */
     .stApp {
-        background-color: #121212;
-        color: #E0E0E0;
+        background-color: #E3F2FD;
+        color: #0D3B66;
     }
+    /* Títulos e cabeçalhos */
     h1, h2, h3 {
-        color: #FFC107 !important;
+        color: #0277BD !important;
         font-family: monospace;
     }
+    /* Textos gerais */
+    p, label, span, .streamlit-expanderHeader {
+        color: #1E3A8A !important;
+    }
+    /* Botões personalizados */
     .stButton>button {
-        background-color: #FFC107;
-        color: #121212;
+        background-color: #0288D1;
+        color: #FFFFFF;
         font-weight: bold;
         border-radius: 6px;
         border: none;
         width: 100%;
     }
     .stButton>button:hover {
-        background-color: #FFA000;
-        color: #000000;
-    }
-    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea {
-        background-color: #1E1E1E;
+        background-color: #01579B;
         color: #FFFFFF;
-        border: 1px solid #333333;
+    }
+    /* Caixas de texto, selectbox e textareas */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea {
+        background-color: #FFFFFF;
+        color: #0D3B66;
+        border: 1px solid #90CAF9;
+    }
+    /* Expanders */
+    .streamlit-expanderContent {
+        background-color: #F0F8FF;
+        color: #0D3B66;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -86,10 +99,10 @@ if "prestadores" not in st.session_state:
     st.session_state["prestadores"] = carregar_dados()
 
 def main():
-    # Cabeçalho com o novo Logótipo AKITEM e Menu Superior Direito
+    # Cabeçalho com o Logótipo AKITEM e Menu Superior Direito
     col_logo, col_menu = st.columns([3, 2])
     with col_logo:
-        # Inserção do logótipo oficial atualizado via novo link
+        # Inserção do logótipo oficial AKITEM
         st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=400)
     
     with col_menu:
