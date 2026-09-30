@@ -108,7 +108,7 @@ def main():
     col_logo, col_search, col_actions = st.columns([2, 5, 2])
     
     with col_logo:
-        # Inserção do logótipo oficial AKITEM[cite: 4]
+        # Inserção do logótipo oficial AKITEM
         st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=220)
         
     with col_search:
@@ -128,7 +128,7 @@ def main():
     # --- BARRA DE NAVEGAÇÃO SUPERIOR COM CLIQUE FUNCIONAL ---
     nav_cols = st.columns(8)
     
-    # Botão Início corrigido para repor a página principal e limpar filtros
+    # Botão Início limpa os filtros e recarrega a página principal
     with nav_cols[0]:
         if st.button("🏠 Início"):
             st.session_state["filtro_categoria"] = None
@@ -170,7 +170,6 @@ def main():
         mostrar_painel_admin()
 
 def mostrar_home(termo_busca=""):
-    # Se uma categoria do topo foi clicada, exibe a lista de subcategorias interativas (como na imagem)
     cat_selecionada = st.session_state.get("filtro_categoria")
     
     if cat_selecionada and cat_selecionada in SUBCATEGORIAS:
@@ -182,11 +181,10 @@ def mostrar_home(termo_busca=""):
         for idx, sub in enumerate(subs):
             with sub_cols[idx % 4]:
                 if st.button(f"🔍 {sub}", key=f"sub_{cat_selecionada}_{idx}"):
-                    st.info(A a filtrar por: **{sub}**)
+                    st.info(f"A filtrar por: **{sub}**")
         
         st.markdown("---")
 
-    # Abas de Filtro de Conteúdo
     aba_selecionada = st.radio("", ["Produtos", "Serviços", "Parceiros"], horizontal=True, label_visibility="collapsed")
     st.markdown("<br>", unsafe_allow_html=True)
     
