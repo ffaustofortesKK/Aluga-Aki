@@ -11,51 +11,72 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado (Fundo Azul Bebê / Azul Clarinho)
+# Estilo CSS personalizado idêntico ao modelo profissional fornecido
 st.markdown("""
     <style>
-    /* Fundo geral da aplicação em azul bebê (#E3F2FD) */
     .stApp {
         background-color: #E3F2FD;
-        color: #0D3B66;
+        color: #1A1A1A;
     }
-    /* Títulos e cabeçalhos */
-    h1, h2, h3 {
-        color: #0277BD !important;
-        font-family: monospace;
-    }
-    /* Textos gerais */
-    p, label, span, .streamlit-expanderHeader {
-        color: #1E3A8A !important;
-    }
-    /* Botões personalizados */
-    .stButton>button {
-        background-color: #0288D1;
-        color: #FFFFFF;
-        font-weight: bold;
-        border-radius: 6px;
-        border: none;
-        width: 100%;
-    }
-    .stButton>button:hover {
-        background-color: #01579B;
-        color: #FFFFFF;
-    }
-    /* Caixas de texto, selectbox e textareas */
-    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea {
+    /* Estilo do cabeçalho estilo e-commerce */
+    .header-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0px;
         background-color: #FFFFFF;
-        color: #0D3B66;
-        border: 1px solid #90CAF9;
+        border-bottom: 1px solid #E0E0E0;
+        margin-bottom: 15px;
+        border-radius: 8px;
     }
-    /* Expanders */
-    .streamlit-expanderContent {
-        background-color: #F0F8FF;
-        color: #0D3B66;
+    .nav-bar {
+        display: flex;
+        gap: 20px;
+        background-color: #FFFFFF;
+        padding: 12px 20px;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #4A4A4A;
+    }
+    .nav-bar span:hover {
+        color: #FF5722;
+        cursor: pointer;
+    }
+    /* Cartões de produtos */
+    .product-card {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        border: 1px solid #EFEFEF;
+    }
+    .product-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2C3E50;
+        margin-top: 10px;
+    }
+    .product-price {
+        font-size: 16px;
+        font-weight: bold;
+        color: #111111;
+        margin-top: 5px;
+    }
+    .store-tag {
+        font-size: 11px;
+        font-weight: bold;
+        color: #FF5722;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Categorias solicitadas
+# Categorias do sistema
 CATEGORIAS = [
     "Música", 
     "Roupa", 
@@ -67,7 +88,6 @@ CATEGORIAS = [
     "Limpeza de Obra"
 ]
 
-# Ficheiro JSON para garantir persistência (os dados não se perdem)
 DB_FILE = "dados_prestadores.json"
 
 def carregar_dados():
@@ -99,27 +119,57 @@ if "prestadores" not in st.session_state:
     st.session_state["prestadores"] = carregar_dados()
 
 def main():
-    # Cabeçalho com o Logótipo AKITEM e Menu Superior Direito
-    col_logo, col_menu = st.columns([3, 2])
-    with col_logo:
-        # Inserção do logótipo oficial AKITEM
-        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=400)
+    # --- CABEÇALHO SUPERIOR IDÊNCICO À IMAGEM ---
+    col_logo, col_search, col_actions = st.columns([2, 5, 2])
     
-    with col_menu:
-        st.markdown("<div style='text-align: right; padding-top: 20px;'>", unsafe_allow_html=True)
-        # Menu no canto superior direito simulado com selectbox interativo
-        opcao_menu = st.selectbox(
-            "📌 Menu de Navegação",
-            ["🏠 Página Inicial", "📝 Registar Empresa", "🔐 Login Prestador", "⚙️ Administração"],
-            key="menu_superior"
-        )
+    with col_logo:
+        # Logótipo oficial AKITEM fornecido via link[cite: 4]
+        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=220)
+        
+    with col_search:
+        st.markdown("<div style='margin-top: 10px;'>", unsafe_allow_html=True)
+        termo_pesquisa = st.text_input("Pesquisa", placeholder="Pesquisar produtos, lojas ou serviços...", label_visibility="collapsed")
         st.markdown("</div>", unsafe_allow_html=True)
+        
+    with col_actions:
+        st.markdown("""
+            <div style='display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 15px; font-size: 14px; font-weight: 500;'>
+                <span>❤️ <sup>0</sup></span>
+                <span>🛒 <sup>0</sup></span>
+                <span><b>Entrar 👤</b></span>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # --- BARRA DE NAVEGAÇÃO SECUNDÁRIA ---
+    st.markdown("""
+        <div class="nav-bar">
+            <span>Início</span>
+            <span>Compras & E-Commerce ▾</span>
+            <span>Alugar ▾</span>
+            <span>Eventos ▾</span>
+            <span>Comida & Restaurantes ▾</span>
+            <span>Supermercados ▾</span>
+            <span>Farmácia & Saúde ▾</span>
+            <span>Alojamento & Reservas ▾</span>
+            <span>Prestação de Serviços ▾</span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Migalhas de pão (Breadcrumb) e Menu de Gestão
+    col_bc, col_menu_sel = st.columns([3, 2])
+    with col_bc:
+        st.markdown("<small><b>Início</b> › Painel Principal</small>", unsafe_allow_html=True)
+    with col_menu_sel:
+        opcao_menu = st.selectbox(
+            "Navegação Principal",
+            ["🏠 Página Inicial", "📝 Registar Empresa", "🔐 Login Prestador", "⚙️ Administração"],
+            label_visibility="collapsed"
+        )
 
     st.markdown("---")
 
-    # Direcionamento com base na escolha do menu superior direito
     if opcao_menu == "🏠 Página Inicial":
-        mostrar_home()
+        mostrar_home(termo_pesquisa)
     elif opcao_menu == "📝 Registar Empresa":
         mostrar_registo()
     elif opcao_menu == "🔐 Login Prestador":
@@ -127,32 +177,44 @@ def main():
     elif opcao_menu == "⚙️ Administração":
         mostrar_painel_admin()
 
-def mostrar_home():
-    st.header("🌟 Empresas e Prestadores Aprovados")
+def mostrar_home(termo_busca=""):
+    # Abas de Filtro Estilo Marketplace
+    aba_selecionada = st.radio("", ["Produtos", "Serviços", "Parceiros"], horizontal=True, label_visibility="collapsed")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
     
     aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
     
+    # Filtrar por termo de pesquisa se preenchido
+    if termo_busca:
+        aprovados = [p for p in aprovados if termo_busca.lower() in p['nome_empresa'].lower() or termo_busca.lower() in p['categoria'].lower()]
+
     if not aprovados:
-        st.info("Ainda não existem empresas aprovadas na plataforma.")
-    else:
-        for p in aprovados:
-            with st.expander(f"🏢 {p['nome_empresa']} — [{p['categoria']}]"):
+        st.info("Nenhum prestador ou produto encontrado de momento.")
+        return
+
+    # Exibição em grelha de cartões elegantes estilo a imagem de referência
+    cols = st.columns(4)
+    for idx, p in enumerate(aprovados):
+        col_atual = cols[idx % 4]
+        with col_atual:
+            st.markdown(f"""
+                <div class="product-card">
+                    <div class="store-tag">{p['categoria']}</div>
+                    <div class="product-title">{p['nome_empresa']}</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">📍 {p['localizacao']['municipio']}</div>
+                    <div class="product-price">Disponível para Aluguer</div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            with st.expander(f"Ver Detalhes"):
                 st.write(f"📞 **Telefone:** {p['telefone']}")
-                st.write(f"📍 **Localização:** Rua {p['localizacao']['rua']}, Bairro {p['localizacao']['bairro']}, {p['localizacao']['municipio']}")
-                st.markdown(f"**📖 Sobre a Empresa / Serviços:** \n> {p.get('sobre_empresa', 'Sem descrição fornecida.')}")
-                
-                st.markdown("**📸 Portefólio:**")
-                fotos = p.get('fotos', [])
-                if fotos:
-                    cols = st.columns(min(len(fotos), 3))
-                    for idx, foto_info in enumerate(fotos):
-                        col_idx = idx % 3
-                        with cols[col_idx]:
-                            st.caption(f"📝 {foto_info.get('descricao', 'Sem descrição')}")
+                st.write(f"📍 **Endereço:** Rua {p['localizacao']['rua']}, {p['localizacao']['bairro']}")
+                st.markdown(f"**Sobre:** {p.get('sobre_empresa', 'Sem descrição.')}")
 
 def mostrar_registo():
     st.header("📝 Registo de Novo Prestador / Empresa")
-    st.write("Preencha os campos abaixo. Após submeter, o administrador validará o seu registo.")
+    st.write("Preencha os dados abaixo para submeter o seu negócio à plataforma.")
 
     with st.form("form_registo"):
         col1, col2 = st.columns(2)
@@ -166,7 +228,7 @@ def mostrar_registo():
 
         st.markdown("---")
         st.markdown("### 📖 Descrição da Empresa")
-        sobre_empresa = st.text_area("Fale um pouco sobre a empresa, o que faz, quais os serviços e produtos que aluga:*", height=100)
+        sobre_empresa = st.text_area("Fale sobre os seus produtos e serviços de aluguer:*", height=100)
 
         st.markdown("---")
         st.markdown("### 📍 Localização Detalhada")
@@ -179,7 +241,7 @@ def mostrar_registo():
             rua = st.text_input("Rua*")
 
         st.markdown("---")
-        st.markdown("### 📸 Upload de 6 Fotos com Descrição")
+        st.markdown("### 📸 Portefólio (Carregar até 6 fotos)")
         
         fotos_dados = []
         for i in range(1, 7):
@@ -197,7 +259,7 @@ def mostrar_registo():
 
         if submitted:
             if not nome_empresa or not telefone or not bairro or not municipio or not rua or not password or not sobre_empresa:
-                st.error("Por favor, preencha todos os campos obrigatórios (*), incluindo a descrição da empresa.")
+                st.error("Preencha todos os campos obrigatórios (*).")
             elif password != confirmar_password:
                 st.error("As palavras-passe não coincidem.")
             else:
@@ -214,11 +276,11 @@ def mostrar_registo():
                 }
                 st.session_state["prestadores"].append(novo_prestador)
                 guardar_dados(st.session_state["prestadores"])
-                st.success("Registo submetido com sucesso! Os dados foram guardados e aguardam validação do Administrador.")
+                st.success("Registo submetido com sucesso! Aguarda validação do Administrador.")
 
 def mostrar_login_prestador():
     st.header("🔐 Área Restrita do Prestador")
-    st.write("Insira os seus dados para aceder e atualizar o seu cadastro e serviços.")
+    st.write("Aceda para gerir os seus dados e serviços na plataforma.")
 
     with st.form("form_login"):
         nome_pesquisa = st.text_input("Nome da Empresa")
@@ -229,9 +291,9 @@ def mostrar_login_prestador():
             prestador = next((p for p in st.session_state["prestadores"] if p["nome_empresa"].lower() == nome_pesquisa.lower() and p["password"] == pass_input), None)
             if prestador:
                 st.session_state["prestador_logado"] = prestador['id']
-                st.success(f"Autenticação bem-sucedida para: {prestador['nome_empresa']}")
+                st.success(f"Sessão iniciada para: {prestador['nome_empresa']}")
             else:
-                st.error("Empresa não encontrada ou palavra-passe incorreta.")
+                st.error("Dados incorretos ou empresa não encontrada.")
 
     if "prestador_logado" in st.session_state:
         p_id = st.session_state["prestador_logado"]
@@ -239,35 +301,33 @@ def mostrar_login_prestador():
         
         if p_atual:
             st.markdown("---")
-            st.subheader(f"Gerir Perfil: {p_atual['nome_empresa']}")
+            st.subheader(f"Editar Perfil: {p_atual['nome_empresa']}")
             with st.form("form_update"):
                 novo_tel = st.text_input("Atualizar Telefone", value=p_atual['telefone'])
                 nova_rua = st.text_input("Atualizar Rua", value=p_atual['localizacao']['rua'])
-                novo_sobre = st.text_area("Atualizar Descrição da Empresa", value=p_atual.get('sobre_empresa', ''))
+                novo_sobre = st.text_area("Atualizar Descrição", value=p_atual.get('sobre_empresa', ''))
                 
                 if st.form_submit_button("Guardar Alterações"):
                     p_atual['telefone'] = novo_tel
                     p_atual['localizacao']['rua'] = nova_rua
                     p_atual['sobre_empresa'] = novo_sobre
                     guardar_dados(st.session_state["prestadores"])
-                    st.success("Dados alterados e guardados com sucesso!")
+                    st.success("Alterações guardadas com sucesso!")
 
 def mostrar_painel_admin():
     st.header("⚙️ Painel de Administração")
-    
     admin_pass = st.text_input("Palavra-passe de Administrador", type="password", key="adm_pass")
     
     if admin_pass != "admin123":
-        st.info("Insira a palavra-passe de administração para gerir as empresas (Utilize `admin123` para teste).")
+        st.info("Insira a palavra-passe de administração (Utilize `admin123` para teste).")
         return
 
-    st.success("Administrador autenticado com sucesso.")
-    st.markdown("### 📋 Gestão de Empresas Registadas")
+    st.success("Acesso administrativo autorizado.")
+    st.markdown("### 📋 Gestão de Prestadores Registados")
 
     prestadores = st.session_state["prestadores"]
-    
     if not prestadores:
-        st.warning("Ainda não existem registos na plataforma.")
+        st.warning("Sem registos na plataforma.")
         return
 
     for i, p in enumerate(prestadores):
@@ -277,7 +337,6 @@ def mostrar_painel_admin():
                 st.write(f"**Empresa:** {p['nome_empresa']}")
                 st.write(f"**Categoria:** {p['categoria']} | **Estado:** `{p['status']}`")
                 st.write(f"**Local:** {p['localizacao']['municipio']} - {p['localizacao']['bairro']}")
-                st.write(f"*{p.get('sobre_empresa', '')[:60]}...*")
             with col2:
                 if p['status'] == "Pendente":
                     if st.button(f"Aprovar", key=f"apr_{i}"):
@@ -290,10 +349,10 @@ def mostrar_painel_admin():
                         guardar_dados(prestadores)
                         st.rerun()
             with col3:
-                if st.button(f"🗑️ Excluir Empresa", key=f"del_{i}"):
+                if st.button(f"🗑️ Excluir", key=f"del_{i}"):
                     st.session_state["prestadores"].pop(i)
-                    guardar_dados(st.session_state["prestadores"])
-                    st.success("Empresa excluída com sucesso!")
+                    guardar_dados(prestadores)
+                    st.success("Empresa removida!")
                     st.rerun()
             st.markdown("---")
 
