@@ -11,14 +11,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado para imitar fielmente o design da imagem
+# Estilo CSS personalizado para imitar fielmente o design profissional
 st.markdown("""
     <style>
     .stApp {
         background-color: #FFFFFF;
         color: #1A1A1A;
     }
-    /* Ocultar elementos padrão do Streamlit para um aspeto mais profissional */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
@@ -39,8 +38,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 30px;
     }
-    
-    /* Cartões de produtos */
     .product-card {
         background-color: #FFFFFF;
         border-radius: 12px;
@@ -94,7 +91,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Categorias solicitadas pelo utilizador
 CATEGORIAS_PRINCIPAIS = [
     "Início", 
     "Compras & E-Commerce", 
@@ -156,33 +152,45 @@ if "pagina_atual" not in st.session_state:
     st.session_state["pagina_atual"] = "🏠 Página Inicial"
 
 def main():
-    # --- BARRA DE NAVEGAÇÃO TOPO (Estilo Imagem) ---
-    cols_nav = st.columns(9)
-    menu_selecionado = None
+    # --- CABEÇALHO SUPERIOR (Logótipo, Pesquisa e Botão de Utilizador) ---
+    col_logo, col_search, col_user = st.columns([2.5, 6, 2])
     
+    with col_logo:
+        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=180)
+        
+    with col_search:
+        termo_geral = st.text_input("Pesquisa Geral", placeholder="Pesquisar produtos, lojas ou serviços...", label_visibility="collapsed")
+        
+    with col_user:
+        # Menu de Ação através do "Boneco" (Selectbox limpo no canto superior direito)
+        acao_utilizador = st.selectbox(
+            "Utilizador", 
+            ["👤 Entrar / Conta", "📝 Registar Nova Empresa", "🔐 Login Prestador", "⚙️ Administração (Adminff24)"],
+            label_visibility="collapsed"
+        )
+        
+        if "Registar" in acao_utilizador:
+            st.session_state["pagina_atual"] = "📝 Registar Empresa"
+        elif "Prestador" in acao_utilizador:
+            st.session_state["pagina_atual"] = "🔐 Login Prestador"
+        elif "Administração" in acao_utilizador:
+            st.session_state["pagina_atual"] = "⚙️ Administração"
+        elif "Entrar" in acao_utilizador and st.session_state["pagina_atual"] not in ["🏠 Página Inicial"]:
+            st.session_state["pagina_atual"] = "🏠 Página Inicial"
+
+    # --- BARRA DE NAVEGAÇÃO DE CATEGORIAS TOPO ---
+    cols_nav = st.columns(9)
     for idx, cat in enumerate(CATEGORIAS_PRINCIPAIS):
         with cols_nav[idx]:
-            if st.button(cat, key=f"nav_top_{idx}"):
-                if cat == "Início":
+            if st.button(cat, key=f"nav_top_{idx}", use_container_width=True):
+                if cat in ["Início", "Alugar"]:
                     st.session_state["pagina_atual"] = "🏠 Página Inicial"
                     st.session_state["filtro_subcat"] = "Tudo"
-                    st.rerun()
-                elif cat == "Alugar":
-                    st.session_state["pagina_atual"] = "🏠 Página Inicial"
-                    st.rerun()
-                elif cat == "Prestação de Serviços":
-                    st.session_state["pagina_atual"] = "📝 Registar Empresa"
                     st.rerun()
 
     st.markdown("<hr style='margin: 10px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    # --- MENU DE NAVEGAÇÃO INTERNA DO SISTEMA ---
-    with st.sidebar:
-        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=180)
-        st.markdown("### Menu do Sistema")
-        nav_escolha = st.radio("Ir para:", ["🏠 Página Inicial", "📝 Registar Empresa", "🔐 Login Prestador", "⚙️️ Administração"])
-        st.session_state["pagina_atual"] = nav_escolha
-
+    # --- ROTEAMENTO DAS PÁGINAS ---
     if st.session_state["pagina_atual"] == "🏠 Página Inicial":
         mostrar_pagina_inicial()
     elif st.session_state["pagina_atual"] == "📝 Registar Empresa":
@@ -193,27 +201,26 @@ def main():
         mostrar_painel_admin()
 
 def mostrar_pagina_inicial():
-    # --- CABEÇALHO HERO ---
     st.markdown('<div class="hero-title">Alugue o que precisa, <span class="hero-highlight">quando precisa.</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Carros, som, tendas, trajes, equipamentos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
 
-    # --- BARRA DE PESQUISA AVANÇADA (Estilo Imagem) ---
+    # --- BARRA DE PESQUISA AVANÇADA ---
     with st.container():
         sc1, sc2, sc3, sc4, sc5 = st.columns([2.5, 2, 1.8, 1.8, 0.6])
         with sc1:
-            pesq_oque = st.text_input("O quê", placeholder="Pesquisar artigos...", label_visibility="collapsed")
+            st.text_input("O quê", placeholder="Pesquisar artigos...", label_visibility="collapsed")
         with sc2:
-            pesq_onde = st.text_input("Onde", placeholder="Luanda, Talatona...", label_visibility="collapsed")
+            st.text_input("Onde", placeholder="Luanda, Talatona...", label_visibility="collapsed")
         with sc3:
-            pesq_lev = st.text_input("Levantamento", placeholder="dd/mm/aaaa", label_visibility="collapsed")
+            st.text_input("Levantamento", placeholder="dd/mm/aaaa", label_visibility="collapsed")
         with sc4:
-            pesq_dev = st.text_input("Devolução", placeholder="dd/mm/aaaa", label_visibility="collapsed")
+            st.text_input("Devolução", placeholder="dd/mm/aaaa", label_visibility="collapsed")
         with sc5:
-            btn_pesquisar = st.button("🔍", use_container_width=True)
+            st.button("🔍", use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- BARRA DE SUBCATEGORIAS HORIZONTAIS COM ÍCONES ---
+    # --- BARRA DE SUBCATEGORIAS ---
     sub_cols = st.columns(len(SUBCATEGORIAS_ALUGUER))
     for idx, sub in enumerate(SUBCATEGORIAS_ALUGUER):
         with sub_cols[idx]:
@@ -224,50 +231,40 @@ def mostrar_pagina_inicial():
     st.markdown(f"<small>A filtrar por categoria: <b>{st.session_state['filtro_subcat']}</b></small>", unsafe_allow_html=True)
     st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    # --- LISTAGEM DE ARTIGOS / PRODUTOS ---
     st.markdown("### Disponíveis para alugar")
     
-    # Dados de exemplo visuais idênticos à imagem + registos reais guardados
     produtos_exemplo = [
         {
             "nome": "Cadeira de silicone",
             "locador": "Aluguer de Decoração",
             "preco": "750 Kz dia",
             "imagem": "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=500",
-            "categoria": "Materiais de Decoração",
-            "tipo": "Novo"
+            "categoria": "Materiais de Decoração"
         },
         {
             "nome": "Cadeiras de plástico",
             "locador": "Aluguer de Decoração",
             "preco": "500 Kz dia",
             "imagem": "https://images.unsplash.com/photo-1544457070-4cd773b4d71e?w=500",
-            "categoria": "Materiais de Decoração",
-            "tipo": "Novo"
+            "categoria": "Materiais de Decoração"
         },
         {
             "nome": "Cadeiras de alugar",
             "locador": "Aluguer de Decoração",
             "preco": "750 Kz dia",
             "imagem": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500",
-            "categoria": "Materiais de Decoração",
-            "tipo": "Novo"
+            "categoria": "Materiais de Decoração"
         }
     ]
 
     prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
 
-    # Filtrar por subcategoria se selecionado
     filtro = st.session_state["filtro_subcat"]
     if filtro != "Tudo":
         produtos_exemplo = [p for p in produtos_exemplo if p["categoria"].lower() == filtro.lower()]
 
-    total_artigos = len(produtos_exemplo) + len(prestadores_aprovados)
-    st.markdown(f"<p style='color: #666; font-size: 13px;'>{total_artigos} artigos</p>", unsafe_allow_html=True)
-
     cols = st.columns(4)
     
-    # Exibir artigos modelo
     for idx, item in enumerate(produtos_exemplo):
         col_atual = cols[idx % 4]
         with col_atual:
@@ -285,7 +282,6 @@ def mostrar_pagina_inicial():
                 </div>
             """, unsafe_allow_html=True)
 
-    # Exibir prestadores/empresas aprovadas na base de dados
     for idx, p in enumerate(prestadores_aprovados):
         col_atual = cols[(len(produtos_exemplo) + idx) % 4]
         with col_atual:
@@ -312,7 +308,6 @@ def mostrar_registo():
         with col1:
             nome_empresa = st.text_input("Nome da Empresa*")
             telefone = st.text_input("Número de Telefone*")
-            # Utilizar exatamente as categorias solicitadas
             categoria = st.selectbox("Categoria Principal*", SUBCATEGORIAS_ALUGUER[1:])
         with col2:
             password = st.text_input("Palavra-passe (Password)*", type="password")
@@ -393,45 +388,56 @@ def mostrar_login_prestador():
 
 def mostrar_painel_admin():
     st.header("⚙️ Painel de Administração")
-    admin_pass = st.text_input("Palavra-passe de Administrador", type="password", key="adm_pass")
-    
-    if admin_pass != "admin123":
-        st.info("Insira a palavra-passe de administração (Utilize `admin123` para teste).")
-        return
+    st.write("Insira as credenciais de Administrador para gerir a plataforma.")
 
-    st.success("Acesso administrativo autorizado.")
-    st.markdown("### 📋 Gestão de Prestadores Registados")
+    with st.form("form_admin_login"):
+        user_input = st.text_input("Utilizador Admin")
+        pass_input = st.text_input("Palavra-passe Admin", type="password")
+        login_admin = st.form_submit_button("Entrar como Administrador")
 
-    prestadores = st.session_state["prestadores"]
-    if not prestadores:
-        st.warning("Sem registos na plataforma.")
-        return
+        if login_admin:
+            # Validação estricta com as tuas credenciais indicadas
+            if user_input == "adminff24" and pass_input == "ffkaraoke2026":
+                st.session_state["admin_autenticado"] = True
+                st.success("Sessão de Administrador iniciada com sucesso!")
+            else:
+                st.error("Utilizador ou palavra-passe de Administrador incorretos.")
 
-    for i, p in enumerate(prestadores):
-        with st.container():
-            col1, col2, col3 = st.columns([3, 2, 2])
-            with col1:
-                st.write(f"**Empresa:** {p['nome_empresa']}")
-                st.write(f"**Categoria:** {p['categoria']} | **Estado:** `{p['status']}`")
-                st.write(f"**Local:** {p['localizacao']['municipio']} - {p['localizacao']['bairro']}")
-            with col2:
-                if p['status'] == "Pendente":
-                    if st.button(f"Aprovar", key=f"apr_{i}"):
-                        p['status'] = "Aprovado"
+    if st.session_state.get("admin_autenticado", False):
+        st.markdown("---")
+        st.success("✅ Acesso administrativo autorizado (Adminff24).")
+        st.markdown("### 📋 Gestão de Prestadores Registados")
+
+        prestadores = st.session_state["prestadores"]
+        if not prestadores:
+            st.warning("Sem registos de prestadores na plataforma.")
+            return
+
+        for i, p in enumerate(prestadores):
+            with st.container():
+                col1, col2, col3 = st.columns([3, 2, 2])
+                with col1:
+                    st.write(f"**Empresa:** {p['nome_empresa']}")
+                    st.write(f"**Categoria:** {p['categoria']} | **Estado:** `{p['status']}`")
+                    st.write(f"**Local:** {p['localizacao']['municipio']} - {p['localizacao']['bairro']}")
+                with col2:
+                    if p['status'] == "Pendente":
+                        if st.button(f"Aprovar", key=f"apr_{i}"):
+                            p['status'] = "Aprovado"
+                            guardar_dados(prestadores)
+                            st.rerun()
+                    else:
+                        if st.button(f"Suspender", key=f"susp_{i}"):
+                            p['status'] = "Pendente"
+                            guardar_dados(prestadores)
+                            st.rerun()
+                with col3:
+                    if st.button(f"🗑️ Excluir", key=f"del_{i}"):
+                        st.session_state["prestadores"].pop(i)
                         guardar_dados(prestadores)
+                        st.success("Empresa removida!")
                         st.rerun()
-                else:
-                    if st.button(f"Suspender", key=f"susp_{i}"):
-                        p['status'] = "Pendente"
-                        guardar_dados(prestadores)
-                        st.rerun()
-            with col3:
-                if st.button(f"🗑️ Excluir", key=f"del_{i}"):
-                    st.session_state["prestadores"].pop(i)
-                    guardar_dados(prestadores)
-                    st.success("Empresa removida!")
-                    st.rerun()
-            st.markdown("---")
+                st.markdown("---")
 
 if __name__ == "__main__":
     main()
