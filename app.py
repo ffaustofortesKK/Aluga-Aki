@@ -11,41 +11,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado idêntico ao modelo profissional fornecido
+# Estilo CSS personalizado
 st.markdown("""
     <style>
     .stApp {
         background-color: #E3F2FD;
         color: #1A1A1A;
     }
-    /* Estilo do cabeçalho estilo e-commerce */
-    .header-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 0px;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid #E0E0E0;
-        margin-bottom: 15px;
-        border-radius: 8px;
-    }
-    .nav-bar {
-        display: flex;
-        gap: 20px;
-        background-color: #FFFFFF;
-        padding: 12px 20px;
-        border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
-        font-size: 14px;
-        font-weight: 500;
-        color: #4A4A4A;
-    }
-    .nav-bar span:hover {
-        color: #FF5722;
-        cursor: pointer;
-    }
-    /* Cartões de produtos */
     .product-card {
         background-color: #FFFFFF;
         border-radius: 10px;
@@ -76,7 +48,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Categorias do sistema
 CATEGORIAS = [
     "Música", 
     "Roupa", 
@@ -87,6 +58,17 @@ CATEGORIAS = [
     "Empregada Doméstica", 
     "Limpeza de Obra"
 ]
+
+# Subcategorias detalhadas por secção (como na imagem de referência)
+SUBCATEGORIAS = {
+    "Alugar": ["Carros", "Motas & Scooters", "Carrinhas & Vans", "Camiões & Pesados", "Geradores & Energia", "Som Profissional", "Iluminação & Luz", "Tendas & Equipamentos"],
+    "Eventos": ["Casamentos", "Aniversários", "Festas Corporativas", "Concertos", "Espaços & quintas"],
+    "Comida & Restaurantes": ["Prato Feito", "Catering", "Churrasco", "Sobremesas & Bolos", "Bebidas"],
+    "Supermercados": ["Mercearia", "Frutas & Legumes", "Talho", "Bebidas & Snacks", "Higiene & Limpeza"],
+    "Farmácia & Saúde": ["Medicamentos", "Primeiros Socorros", "Vitaminas & Suplementos", "Cuidados Pessoais"],
+    "Alojamento & Reservas": ["Hotéis", "Apartamentos Mobilados", "Resorts", "Casas de Campo"],
+    "Prestação de Serviços": ["Limpeza de Obra", "Empregada Doméstica", "Electricista", "Canalizador", "Segurança"]
+}
 
 DB_FILE = "dados_prestadores.json"
 
@@ -118,12 +100,15 @@ def guardar_dados(prestadores):
 if "prestadores" not in st.session_state:
     st.session_state["prestadores"] = carregar_dados()
 
+if "filtro_categoria" not in st.session_state:
+    st.session_state["filtro_categoria"] = None
+
 def main():
-    # --- CABEÇALHO SUPERIOR IDÊNCICO À IMAGEM ---
+    # --- CABEÇALHO SUPERIOR ---
     col_logo, col_search, col_actions = st.columns([2, 5, 2])
     
     with col_logo:
-        # Logótipo oficial AKITEM fornecido via link[cite: 4]
+        # Inserção do logótipo oficial AKITEM[cite: 4]
         st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=220)
         
     with col_search:
@@ -140,25 +125,32 @@ def main():
             </div>
         """, unsafe_allow_html=True)
 
-    # --- BARRA DE NAVEGAÇÃO SECUNDÁRIA ---
-    st.markdown("""
-        <div class="nav-bar">
-            <span>Início</span>
-            <span>Compras & E-Commerce ▾</span>
-            <span>Alugar ▾</span>
-            <span>Eventos ▾</span>
-            <span>Comida & Restaurantes ▾</span>
-            <span>Supermercados ▾</span>
-            <span>Farmácia & Saúde ▾</span>
-            <span>Alojamento & Reservas ▾</span>
-            <span>Prestação de Serviços ▾</span>
-        </div>
-    """, unsafe_allow_html=True)
+    # --- BARRA DE NAVEGAÇÃO SUPERIOR COM CLIQUE FUNCIONAL ---
+    nav_cols = st.columns(8)
+    
+    # Botão Início corrigido para repor a página principal e limpar filtros
+    with nav_cols[0]:
+        if st.button("🏠 Início"):
+            st.session_state["filtro_categoria"] = None
+            st.rerun()
+            
+    menus_principais = list(SUBCATEGORIAS.keys())
+    for idx, menu in enumerate(menus_principais[:7]):
+        with nav_cols[idx + 1]:
+            if st.button(menu):
+                st.session_state["filtro_categoria"] = menu
+                st.rerun()
 
-    # Migalhas de pão (Breadcrumb) e Menu de Gestão
+    st.markdown("---")
+
+    # Menu de Gestão Principal
     col_bc, col_menu_sel = st.columns([3, 2])
     with col_bc:
-        st.markdown("<small><b>Início</b> › Painel Principal</small>", unsafe_allow_html=True)
+        if st.session_state["filtro_categoria"]:
+            st.markdown(f"<small><b>Início</b> › Categoria: <b>{st.session_state['filtro_categoria']}</b></small>", unsafe_allow_html=True)
+        else:
+            st.markdown("<small><b>Início</b> › Painel Principal</small>", unsafe_allow_html=True)
+            
     with col_menu_sel:
         opcao_menu = st.selectbox(
             "Navegação Principal",
@@ -178,14 +170,28 @@ def main():
         mostrar_painel_admin()
 
 def mostrar_home(termo_busca=""):
-    # Abas de Filtro Estilo Marketplace
-    aba_selecionada = st.radio("", ["Produtos", "Serviços", "Parceiros"], horizontal=True, label_visibility="collapsed")
+    # Se uma categoria do topo foi clicada, exibe a lista de subcategorias interativas (como na imagem)
+    cat_selecionada = st.session_state.get("filtro_categoria")
     
+    if cat_selecionada and cat_selecionada in SUBCATEGORIAS:
+        st.markdown(f"## 📌 Opções em: {cat_selecionada}")
+        st.write("Selecione abaixo um dos itens para filtrar os prestadores correspondentes:")
+        
+        subs = SUBCATEGORIAS[cat_selecionada]
+        sub_cols = st.columns(min(len(subs), 4))
+        for idx, sub in enumerate(subs):
+            with sub_cols[idx % 4]:
+                if st.button(f"🔍 {sub}", key=f"sub_{cat_selecionada}_{idx}"):
+                    st.info(A a filtrar por: **{sub}**)
+        
+        st.markdown("---")
+
+    # Abas de Filtro de Conteúdo
+    aba_selecionada = st.radio("", ["Produtos", "Serviços", "Parceiros"], horizontal=True, label_visibility="collapsed")
     st.markdown("<br>", unsafe_allow_html=True)
     
     aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
     
-    # Filtrar por termo de pesquisa se preenchido
     if termo_busca:
         aprovados = [p for p in aprovados if termo_busca.lower() in p['nome_empresa'].lower() or termo_busca.lower() in p['categoria'].lower()]
 
@@ -193,7 +199,6 @@ def mostrar_home(termo_busca=""):
         st.info("Nenhum prestador ou produto encontrado de momento.")
         return
 
-    # Exibição em grelha de cartões elegantes estilo a imagem de referência
     cols = st.columns(4)
     for idx, p in enumerate(aprovados):
         col_atual = cols[idx % 4]
