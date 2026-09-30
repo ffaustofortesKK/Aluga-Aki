@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Configuração da página e tema visual
 st.set_page_config(
-    page_title="FFK — Plataforma de Aluguer e Serviços",
+    page_title="Plataforma de Aluguer e Serviços",
     page_icon="🤝",
     layout="wide"
 )
