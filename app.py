@@ -4,71 +4,120 @@ import json
 import os
 from datetime import datetime
 
-# Configuração da página e tema visual
+# Configuração da página e tema visual (Layout limpo estilo marketplace)
 st.set_page_config(
-    page_title="AKITEM — Plataforma de Aluguer e Serviços",
+    page_title="AKITEM — Alugue o que precisa, quando precisa",
     page_icon="🤝",
     layout="wide"
 )
 
-# Estilo CSS personalizado
+# Estilo CSS personalizado para imitar fielmente o design da imagem
 st.markdown("""
     <style>
     .stApp {
-        background-color: #E3F2FD;
+        background-color: #FFFFFF;
         color: #1A1A1A;
     }
+    /* Ocultar elementos padrão do Streamlit para um aspeto mais profissional */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    .hero-title {
+        font-size: 42px;
+        font-weight: 800;
+        color: #111111;
+        text-align: center;
+        margin-top: 10px;
+        margin-bottom: 5px;
+    }
+    .hero-highlight {
+        color: #FF5722;
+    }
+    .hero-subtitle {
+        font-size: 15px;
+        color: #666666;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    /* Cartões de produtos */
     .product-card {
         background-color: #FFFFFF;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-radius: 12px;
+        padding: 0px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         margin-bottom: 20px;
-        border: 1px solid #EFEFEF;
+        border: 1px solid #EAEAEA;
+        overflow: hidden;
+        position: relative;
     }
     .product-title {
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 600;
         color: #2C3E50;
-        margin-top: 10px;
+        margin: 10px 12px 2px 12px;
+    }
+    .product-loc {
+        font-size: 12px;
+        color: #777777;
+        margin: 0 12px 10px 12px;
     }
     .product-price {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: bold;
         color: #111111;
-        margin-top: 5px;
+        margin: 0 12px 14px 12px;
     }
-    .store-tag {
+    .badge-caucao {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 3px 10px;
+        border-radius: 20px;
         font-size: 11px;
         font-weight: bold;
-        color: #FF5722;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        color: #333333;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .badge-empresa {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.75);
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+        color: #FFFFFF;
     }
     </style>
 """, unsafe_allow_html=True)
 
-CATEGORIAS = [
+# Categorias solicitadas pelo utilizador
+CATEGORIAS_PRINCIPAIS = [
+    "Início", 
+    "Compras & E-Commerce", 
+    "Alugar", 
+    "Eventos", 
+    "Comida & Restaurantes", 
+    "Supermercados", 
+    "Farmácia & Saúde", 
+    "Alojamento & Reservas", 
+    "Prestação de Serviços"
+]
+
+SUBCATEGORIAS_ALUGUER = [
+    "Tudo",
     "Música", 
     "Roupa", 
-    "Materiais de Construção", 
+    "Materiais de construção", 
     "Luzes Para Eventos", 
     "Materiais de Decoração", 
     "Carro", 
     "Empregada Doméstica", 
     "Limpeza de Obra"
 ]
-
-# Subcategorias detalhadas por secção (como na imagem de referência)
-SUBCATEGORIAS = {
-    "Alugar": ["Carros", "Motas & Scooters", "Carrinhas & Vans", "Camiões & Pesados", "Geradores & Energia", "Som Profissional", "Iluminação & Luz", "Tendas & Equipamentos"],
-    "Eventos": ["Casamentos", "Aniversários", "Festas Corporativas", "Concertos", "Espaços & quintas"],
-    "Comida & Restaurantes": ["Prato Feito", "Catering", "Churrasco", "Sobremesas & Bolos", "Bebidas"],
-    "Supermercados": ["Mercearia", "Frutas & Legumes", "Talho", "Bebidas & Snacks", "Higiene & Limpeza"],
-    "Farmácia & Saúde": ["Medicamentos", "Primeiros Socorros", "Vitaminas & Suplementos", "Cuidados Pessoais"],
-    "Alojamento & Reservas": ["Hotéis", "Apartamentos Mobilados", "Resorts", "Casas de Campo"],
-    "Prestação de Serviços": ["Limpeza de Obra", "Empregada Doméstica", "Electricista", "Canalizador", "Segurança"]
-}
 
 DB_FILE = "dados_prestadores.json"
 
@@ -100,131 +149,171 @@ def guardar_dados(prestadores):
 if "prestadores" not in st.session_state:
     st.session_state["prestadores"] = carregar_dados()
 
-if "filtro_categoria" not in st.session_state:
-    st.session_state["filtro_categoria"] = None
+if "filtro_subcat" not in st.session_state:
+    st.session_state["filtro_subcat"] = "Tudo"
+
+if "pagina_atual" not in st.session_state:
+    st.session_state["pagina_atual"] = "🏠 Página Inicial"
 
 def main():
-    # --- CABEÇALHO SUPERIOR ---
-    col_logo, col_search, col_actions = st.columns([2, 5, 2])
+    # --- BARRA DE NAVEGAÇÃO TOPO (Estilo Imagem) ---
+    cols_nav = st.columns(9)
+    menu_selecionado = None
     
-    with col_logo:
-        # Inserção do logótipo oficial AKITEM
-        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=220)
-        
-    with col_search:
-        st.markdown("<div style='margin-top: 10px;'>", unsafe_allow_html=True)
-        termo_pesquisa = st.text_input("Pesquisa", placeholder="Pesquisar produtos, lojas ou serviços...", label_visibility="collapsed")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-    with col_actions:
-        st.markdown("""
-            <div style='display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 15px; font-size: 14px; font-weight: 500;'>
-                <span>❤️ <sup>0</sup></span>
-                <span>🛒 <sup>0</sup></span>
-                <span><b>Entrar 👤</b></span>
-            </div>
-        """, unsafe_allow_html=True)
+    for idx, cat in enumerate(CATEGORIAS_PRINCIPAIS):
+        with cols_nav[idx]:
+            if st.button(cat, key=f"nav_top_{idx}"):
+                if cat == "Início":
+                    st.session_state["pagina_atual"] = "🏠 Página Inicial"
+                    st.session_state["filtro_subcat"] = "Tudo"
+                    st.rerun()
+                elif cat == "Alugar":
+                    st.session_state["pagina_atual"] = "🏠 Página Inicial"
+                    st.rerun()
+                elif cat == "Prestação de Serviços":
+                    st.session_state["pagina_atual"] = "📝 Registar Empresa"
+                    st.rerun()
 
-    # --- BARRA DE NAVEGAÇÃO SUPERIOR COM CLIQUE FUNCIONAL ---
-    nav_cols = st.columns(8)
-    
-    # Botão Início limpa os filtros e recarrega a página principal
-    with nav_cols[0]:
-        if st.button("🏠 Início"):
-            st.session_state["filtro_categoria"] = None
-            st.rerun()
-            
-    menus_principais = list(SUBCATEGORIAS.keys())
-    for idx, menu in enumerate(menus_principais[:7]):
-        with nav_cols[idx + 1]:
-            if st.button(menu):
-                st.session_state["filtro_categoria"] = menu
-                st.rerun()
+    st.markdown("<hr style='margin: 10px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    st.markdown("---")
+    # --- MENU DE NAVEGAÇÃO INTERNA DO SISTEMA ---
+    with st.sidebar:
+        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=180)
+        st.markdown("### Menu do Sistema")
+        nav_escolha = st.radio("Ir para:", ["🏠 Página Inicial", "📝 Registar Empresa", "🔐 Login Prestador", "⚙️️ Administração"])
+        st.session_state["pagina_atual"] = nav_escolha
 
-    # Menu de Gestão Principal
-    col_bc, col_menu_sel = st.columns([3, 2])
-    with col_bc:
-        if st.session_state["filtro_categoria"]:
-            st.markdown(f"<small><b>Início</b> › Categoria: <b>{st.session_state['filtro_categoria']}</b></small>", unsafe_allow_html=True)
-        else:
-            st.markdown("<small><b>Início</b> › Painel Principal</small>", unsafe_allow_html=True)
-            
-    with col_menu_sel:
-        opcao_menu = st.selectbox(
-            "Navegação Principal",
-            ["🏠 Página Inicial", "📝 Registar Empresa", "🔐 Login Prestador", "⚙️ Administração"],
-            label_visibility="collapsed"
-        )
-
-    st.markdown("---")
-
-    if opcao_menu == "🏠 Página Inicial":
-        mostrar_home(termo_pesquisa)
-    elif opcao_menu == "📝 Registar Empresa":
+    if st.session_state["pagina_atual"] == "🏠 Página Inicial":
+        mostrar_pagina_inicial()
+    elif st.session_state["pagina_atual"] == "📝 Registar Empresa":
         mostrar_registo()
-    elif opcao_menu == "🔐 Login Prestador":
+    elif st.session_state["pagina_atual"] == "🔐 Login Prestador":
         mostrar_login_prestador()
-    elif opcao_menu == "⚙️ Administração":
+    elif st.session_state["pagina_atual"] == "⚙️ Administração":
         mostrar_painel_admin()
 
-def mostrar_home(termo_busca=""):
-    cat_selecionada = st.session_state.get("filtro_categoria")
-    
-    if cat_selecionada and cat_selecionada in SUBCATEGORIAS:
-        st.markdown(f"## 📌 Opções em: {cat_selecionada}")
-        st.write("Selecione abaixo um dos itens para filtrar os prestadores correspondentes:")
-        
-        subs = SUBCATEGORIAS[cat_selecionada]
-        sub_cols = st.columns(min(len(subs), 4))
-        for idx, sub in enumerate(subs):
-            with sub_cols[idx % 4]:
-                if st.button(f"🔍 {sub}", key=f"sub_{cat_selecionada}_{idx}"):
-                    st.info(f"A filtrar por: **{sub}**")
-        
-        st.markdown("---")
+def mostrar_pagina_inicial():
+    # --- CABEÇALHO HERO ---
+    st.markdown('<div class="hero-title">Alugue o que precisa, <span class="hero-highlight">quando precisa.</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-subtitle">Carros, som, tendas, trajes, equipamentos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
 
-    aba_selecionada = st.radio("", ["Produtos", "Serviços", "Parceiros"], horizontal=True, label_visibility="collapsed")
+    # --- BARRA DE PESQUISA AVANÇADA (Estilo Imagem) ---
+    with st.container():
+        sc1, sc2, sc3, sc4, sc5 = st.columns([2.5, 2, 1.8, 1.8, 0.6])
+        with sc1:
+            pesq_oque = st.text_input("O quê", placeholder="Pesquisar artigos...", label_visibility="collapsed")
+        with sc2:
+            pesq_onde = st.text_input("Onde", placeholder="Luanda, Talatona...", label_visibility="collapsed")
+        with sc3:
+            pesq_lev = st.text_input("Levantamento", placeholder="dd/mm/aaaa", label_visibility="collapsed")
+        with sc4:
+            pesq_dev = st.text_input("Devolução", placeholder="dd/mm/aaaa", label_visibility="collapsed")
+        with sc5:
+            btn_pesquisar = st.button("🔍", use_container_width=True)
+
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
-    
-    if termo_busca:
-        aprovados = [p for p in aprovados if termo_busca.lower() in p['nome_empresa'].lower() or termo_busca.lower() in p['categoria'].lower()]
 
-    if not aprovados:
-        st.info("Nenhum prestador ou produto encontrado de momento.")
-        return
+    # --- BARRA DE SUBCATEGORIAS HORIZONTAIS COM ÍCONES ---
+    sub_cols = st.columns(len(SUBCATEGORIAS_ALUGUER))
+    for idx, sub in enumerate(SUBCATEGORIAS_ALUGUER):
+        with sub_cols[idx]:
+            if st.button(sub, key=f"subcat_btn_{idx}", use_container_width=True):
+                st.session_state["filtro_subcat"] = sub
+                st.rerun()
+
+    st.markdown(f"<small>A filtrar por categoria: <b>{st.session_state['filtro_subcat']}</b></small>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
+
+    # --- LISTAGEM DE ARTIGOS / PRODUTOS ---
+    st.markdown("### Disponíveis para alugar")
+    
+    # Dados de exemplo visuais idênticos à imagem + registos reais guardados
+    produtos_exemplo = [
+        {
+            "nome": "Cadeira de silicone",
+            "locador": "Aluguer de Decoração",
+            "preco": "750 Kz dia",
+            "imagem": "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=500",
+            "categoria": "Materiais de Decoração",
+            "tipo": "Novo"
+        },
+        {
+            "nome": "Cadeiras de plástico",
+            "locador": "Aluguer de Decoração",
+            "preco": "500 Kz dia",
+            "imagem": "https://images.unsplash.com/photo-1544457070-4cd773b4d71e?w=500",
+            "categoria": "Materiais de Decoração",
+            "tipo": "Novo"
+        },
+        {
+            "nome": "Cadeiras de alugar",
+            "locador": "Aluguer de Decoração",
+            "preco": "750 Kz dia",
+            "imagem": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500",
+            "categoria": "Materiais de Decoração",
+            "tipo": "Novo"
+        }
+    ]
+
+    prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
+
+    # Filtrar por subcategoria se selecionado
+    filtro = st.session_state["filtro_subcat"]
+    if filtro != "Tudo":
+        produtos_exemplo = [p for p in produtos_exemplo if p["categoria"].lower() == filtro.lower()]
+
+    total_artigos = len(produtos_exemplo) + len(prestadores_aprovados)
+    st.markdown(f"<p style='color: #666; font-size: 13px;'>{total_artigos} artigos</p>", unsafe_allow_html=True)
 
     cols = st.columns(4)
-    for idx, p in enumerate(aprovados):
+    
+    # Exibir artigos modelo
+    for idx, item in enumerate(produtos_exemplo):
         col_atual = cols[idx % 4]
         with col_atual:
             st.markdown(f"""
                 <div class="product-card">
-                    <div class="store-tag">{p['categoria']}</div>
-                    <div class="product-title">{p['nome_empresa']}</div>
-                    <div style="font-size: 12px; color: #666; margin-top: 4px;">📍 {p['localizacao']['municipio']}</div>
-                    <div class="product-price">Disponível para Aluguer</div>
+                    <div style="position: relative;">
+                        <img src="{item['imagem']}" style="width: 100%; height: 160px; object-fit: cover;">
+                        <span class="badge-caucao">Sem caução</span>
+                        <span class="badge-empresa">Empresa</span>
+                    </div>
+                    <div class="product-title">{item['nome']}</div>
+                    <div class="product-loc">Locador: {item['locador']}</div>
+                    <div style="font-size: 11px; color: #555; margin: 0 12px 6px 12px;">Reserva sem caução</div>
+                    <div class="product-price">{item['preco']}</div>
                 </div>
             """, unsafe_allow_html=True)
-            
-            with st.expander(f"Ver Detalhes"):
-                st.write(f"📞 **Telefone:** {p['telefone']}")
-                st.write(f"📍 **Endereço:** Rua {p['localizacao']['rua']}, {p['localizacao']['bairro']}")
-                st.markdown(f"**Sobre:** {p.get('sobre_empresa', 'Sem descrição.')}")
+
+    # Exibir prestadores/empresas aprovadas na base de dados
+    for idx, p in enumerate(prestadores_aprovados):
+        col_atual = cols[(len(produtos_exemplo) + idx) % 4]
+        with col_atual:
+            st.markdown(f"""
+                <div class="product-card">
+                    <div style="position: relative; background-color: #f0f0f0; height: 160px; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 35px;">📦</span>
+                        <span class="badge-caucao">Verificado</span>
+                        <span class="badge-empresa">Empresa</span>
+                    </div>
+                    <div class="product-title">{p['nome_empresa']}</div>
+                    <div class="product-loc">Categoria: {p['categoria']}</div>
+                    <div style="font-size: 11px; color: #555; margin: 0 12px 6px 12px;">📍 {p['localizacao']['municipio']}</div>
+                    <div class="product-price">Sob Consulta</div>
+                </div>
+            """, unsafe_allow_html=True)
 
 def mostrar_registo():
     st.header("📝 Registo de Novo Prestador / Empresa")
-    st.write("Preencha os dados abaixo para submeter o seu negócio à plataforma.")
+    st.write("Preencha os dados abaixo para submeter o seu negócio à plataforma AKITEM.")
 
     with st.form("form_registo"):
         col1, col2 = st.columns(2)
         with col1:
             nome_empresa = st.text_input("Nome da Empresa*")
             telefone = st.text_input("Número de Telefone*")
-            categoria = st.selectbox("Categoria Principal*", CATEGORIAS)
+            # Utilizar exatamente as categorias solicitadas
+            categoria = st.selectbox("Categoria Principal*", SUBCATEGORIAS_ALUGUER[1:])
         with col2:
             password = st.text_input("Palavra-passe (Password)*", type="password")
             confirmar_password = st.text_input("Confirmar Palavra-passe*", type="password")
@@ -243,21 +332,6 @@ def mostrar_registo():
         with col_loc3:
             rua = st.text_input("Rua*")
 
-        st.markdown("---")
-        st.markdown("### 📸 Portefólio (Carregar até 6 fotos)")
-        
-        fotos_dados = []
-        for i in range(1, 7):
-            st.markdown(f"**Foto {i}**")
-            f_col1, f_col2 = st.columns([1, 2])
-            with f_col1:
-                img_file = st.file_uploader(f"Carregar imagem {i}", type=["jpg", "png", "jpeg"], key=f"img_{i}")
-            with f_col2:
-                desc = st.text_input(f"Descrição da foto {i}", key=f"desc_{i}")
-            
-            if img_file:
-                fotos_dados.append({"imagem": img_file, "descricao": desc})
-
         submitted = st.form_submit_button("Submeter Registo para Aprovação")
 
         if submitted:
@@ -274,7 +348,7 @@ def mostrar_registo():
                     "password": password,
                     "sobre_empresa": sobre_empresa,
                     "localizacao": {"bairro": bairro, "municipio": municipio, "rua": rua},
-                    "fotos": fotos_dados,
+                    "fotos": [],
                     "status": "Pendente"
                 }
                 st.session_state["prestadores"].append(novo_prestador)
