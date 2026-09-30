@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Configuração da página e tema visual
 st.set_page_config(
-    page_title="Plataforma de Aluguer e Serviços",
+    page_title="AKITEM — Plataforma de Aluguer e Serviços",
     page_icon="🤝",
     layout="wide"
 )
@@ -67,12 +67,9 @@ def carregar_dados():
     return []
 
 def guardar_dados(prestadores):
-    # Nota: Arquivos carregados via st.file_uploader guardam objetos binários/temporários. 
-    # Para guardar em JSON puro de forma persistente, guardamos os metadados e descrições das imagens.
     dados_para_salvar = []
     for p in prestadores:
         p_copia = p.copy()
-        # Converter objetos de ficheiro carregados para nomes/strings se necessário
         fotos_serializaveis = []
         for f in p_copia.get("fotos", []):
             fotos_serializaveis.append({
@@ -89,14 +86,14 @@ if "prestadores" not in st.session_state:
     st.session_state["prestadores"] = carregar_dados()
 
 def main():
-    # Cabeçalho com Logótipo / Símbolo de Aluguer
+    # Cabeçalho com o Logótipo AKITEM e Menu Superior Direito[cite: 4]
     col_logo, col_menu = st.columns([3, 2])
     with col_logo:
-        st.markdown("# 🤝 FFK — Plataforma de Aluguer & Serviços")
-        st.write("Encontre e alugue produtos, equipamentos ou serviços com segurança.")
+        # Inserção do logótipo oficial fornecido via link
+        st.image("https://cdn.phototourl.com/member/2026-09-30-9a52cae2-f291-4fa9-b34b-dd32ab17d97d.jpg", width=400)[cite: 4]
     
     with col_menu:
-        st.markdown("<div style='text-align: right;'>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align: right; padding-top: 20px;'>", unsafe_allow_html=True)
         # Menu no canto superior direito simulado com selectbox interativo
         opcao_menu = st.selectbox(
             "📌 Menu de Navegação",
