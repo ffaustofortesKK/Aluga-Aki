@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado para simular o menu suspenso moderno
+# Estilo CSS personalizado para a aplicação
 st.markdown("""
     <style>
     .stApp {
@@ -145,7 +145,6 @@ def main():
     
     with col_logo:
         st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=150)
-        # Botão Menu / Início logo abaixo do logótipo
         if st.button("🏠 Menu Principal", use_container_width=True):
             st.session_state["pagina_atual"] = "🏠 Página Inicial"
             st.session_state["prestador_selecionado_id"] = None
@@ -177,7 +176,7 @@ def main():
 
     st.markdown("<hr style='margin: 15px 0px 10px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    # --- MENU ESTILO MEGA-MENU (COMPATÍVEL COM O EXEMPLO EM ANEXO) ---
+    # --- MENU ESTILO MEGA-MENU ---
     categorias_disponiveis = ["Tudo"] + list(ESPECIALIDADES_POR_CATEGORIA.keys())
     menu_cols = st.columns(len(categorias_disponiveis))
     
@@ -189,7 +188,6 @@ def main():
                 st.session_state["pagina_atual"] = "🏠 Página Inicial"
                 st.rerun()
 
-    # Se uma categoria específica estiver selecionada, mostramos as especialidades abaixo como sub-opções rápidas estilo dropdown
     filtro_atual = st.session_state["filtro_subcat"]
     if filtro_atual in ESPECIALIDADES_POR_CATEGORIA:
         st.markdown(f"<div style='background-color: #F8F9FA; padding: 10px; border-radius: 8px; border: 1px solid #EAEAEA; margin-top: 5px; margin-bottom: 15px;'><b>Especialidades em {filtro_atual}:</b>", unsafe_allow_html=True)
@@ -221,7 +219,6 @@ def mostrar_pagina_inicial():
 
     prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
 
-    # --- SLIDER / DESTAQUE SE ESCOLHER "Tudo" ---
     if st.session_state["filtro_subcat"] == "Tudo":
         st.markdown("### 🌟 Destaque por Categoria")
         cat_keys = list(ESPECIALIDADES_POR_CATEGORIA.keys())
@@ -307,13 +304,19 @@ def mostrar_detalhe_prestador():
     if not fotos:
         st.info("Este prestador ainda não carregou fotografias.")
     else:
+        # Galeria melhorada com pré-visualização visual clara e elegante em cartões
         cols_f = st.columns(3)
         for idx_f, foto in enumerate(fotos):
             with cols_f[idx_f % 3]:
+                nome_arq = foto.get('nome_ficheiro', f'Foto {idx_f+1}')
+                legenda = foto.get('legenda', 'Sem legenda')
                 st.markdown(f"""
-                    <div style="border: 1px solid #EAEAEA; border-radius: 8px; padding: 10px; background-color: #FAFAFA; margin-bottom: 15px;">
-                        <div style="font-size: 13px; font-weight: bold; color: #333;">📸 {foto.get('nome_ficheiro', f'Foto {idx_f+1}')}</div>
-                        <div style="font-size: 12px; color: #666; margin-top: 5px; font-style: italic;">Legenda: {foto.get('legenda', 'Sem legenda')}</div>
+                    <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; background-color: #F8FAFC; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style="height: 140px; background-color: #EDF2F7; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; border: 1px dashed #CBD5E1;">
+                            <span style="font-size: 32px;">🖼️</span>
+                        </div>
+                        <div style="font-size: 13px; font-weight: 600; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{nome_arq}</div>
+                        <div style="font-size: 12px; color: #64748B; margin-top: 4px; font-style: italic;">{legenda}</div>
                     </div>
                 """, unsafe_allow_html=True)
 
@@ -415,7 +418,7 @@ def mostrar_login_prestador():
                     st.success("Alterações guardadas com sucesso!")
 
             st.markdown("---")
-            st.markdown("### 🖼️️ Gestão de Fotografias e Legendas (Até 20 fotos)")
+            st.markdown("### 🖼 Gestão de Fotografias e Legendas (Até 20 fotos)")
             st.write(f"Fotos atuais carregadas: **{len(p_atual.get('fotos', []))} / 20**")
 
             novas_fotos = st.file_uploader("Carregar novas fotografias", type=["jpg", "png", "jpeg"], accept_multiple_files=True, key="uploader_fotos")
