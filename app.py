@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado para a aplicação e carrossel de fotos
+# Estilo CSS personalizado para a aplicação
 st.markdown("""
     <style>
     .stApp {
@@ -261,16 +261,16 @@ def mostrar_pagina_inicial():
         col_atual = cols[idx % 4]
         with col_atual:
             fotos_p = p.get("fotos", [])
+            pid = p['id']
             
-            # Criação do carrossel automático de imagens em HTML/JS puro injetado com segurança
             slides_html = ""
             if fotos_p:
                 for i_f, f_obj in enumerate(fotos_p):
                     b64 = f_obj.get("dados_base64", "")
                     leg = f_obj.get("legenda", "")
-                    display_style = "display: block;" if i_f == 0 else "display: none;"
+                    d_style = "display: block;" if i_f == 0 else "display: none;"
                     slides_html += f"""
-                        <div class="slide-{p['id']}" style="{display_style} text-align: center; height: 130px; background-color: #F8FAFC;">
+                        <div class="slide-item-{pid}" style="{d_style} text-align: center; height: 130px; background-color: #F8FAFC;">
                             <img src="data:image/jpeg;base64,{b64}" style="max-width: 100%; height: 105px; object-fit: contain; margin-top: 4px;">
                             <div style="font-size: 10px; color: #666; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;">{leg}</div>
                         </div>
@@ -282,20 +282,20 @@ def mostrar_pagina_inicial():
                     </div>
                 """
 
-            carrossel_id = f"carousel_{p['id']}"
+            # Script JavaScript limpo com intervalo de 2000ms (2 segundos)
             script_js = f"""
                 <script>
-                (function() {{
-                    let index_{p['id']} = 0;
-                    const slides_{p['id']} = document.querySelectorAll('.slide-{p['id']}');
-                    if (slides_{p['id']}.length > 1) {{
-                        setInterval(() => {{
-                            slides_{p['id']}[index_{p['id']}].style.display = 'none';
-                            index_{p['id']} = (index_{p['id']} + 1) % slides_{p['id']].length;
-                            slides_{p['id']}[index_{p['id']}].style.display = 'block';
-                        }}, 3000);
+                setTimeout(function() {{
+                    const slides = document.querySelectorAll('.slide-item-{pid}');
+                    if (slides.length > 1) {{
+                        let index = 0;
+                        setInterval(function() {{
+                            slides[index].style.display = 'none';
+                            index = (index + 1) % slides.length;
+                            slides[index].style.display = 'block';
+                        }}, 2000);
                     }}
-                }})();
+                }}, 500);
                 </script>
             """
 
@@ -303,7 +303,7 @@ def mostrar_pagina_inicial():
                 <div class="product-card">
                     <span class="badge-caucao">Verificado</span>
                     <span class="badge-empresa">{p.get('especialidade', p['categoria'])}</span>
-                    <div id="{carrossel_id}" style="border-bottom: 1px solid #EAEAEA;">
+                    <div style="border-bottom: 1px solid #EAEAEA;">
                         {slides_html}
                     </div>
                     <div style="padding: 8px 12px 10px 12px;">
@@ -368,7 +368,7 @@ def mostrar_detalhe_prestador():
                     st.markdown(f"""
                         <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; background-color: #F8FAFC; margin-bottom: 15px;">
                             <div style="height: 160px; background-color: #EDF2F7; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-                                <span style="font-size: 32px;">🖼️️</span>
+                                <span style="font-size: 32px;">🖼️</span>
                             </div>
                             <div style="font-size: 13px; font-weight: 600; color: #1E293B;">{nome_arq}</div>
                             <div style="font-size: 12px; color: #64748B; margin-top: 4px; font-style: italic;">{legenda}</div>
@@ -530,7 +530,7 @@ def mostrar_login_prestador():
                     st.markdown("<hr style='margin: 10px 0px; border: 0.3px solid #EAEAEA;'>", unsafe_allow_html=True)
 
 def mostrar_painel_admin():
-    st.header("⚙️ Painel de Administração")
+    st.header("⚙️️ Painel de Administração")
     st.write("Insira as credenciais de Administrador para gerir a plataforma.")
 
     with st.form("form_admin_login"):
