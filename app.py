@@ -4,14 +4,14 @@ import json
 import os
 from datetime import datetime
 
-# Configuração da página e tema visual (Layout limpo estilo marketplace)
+# Configuração da página e tema visual
 st.set_page_config(
     page_title="AKITEM — Procure o que precisa, em pouco tempo",
     page_icon="🤝",
     layout="wide"
 )
 
-# Estilo CSS personalizado para imitar fielmente o design profissional
+# Estilo CSS personalizado
 st.markdown("""
     <style>
     .stApp {
@@ -91,19 +91,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Dicionário exato de Especialidades por Categoria solicitado
+# Dicionário rigoroso de Categorias e Especialidades exigidas
 ESPECIALIDADES_POR_CATEGORIA = {
     "Moda": ["Sapato", "Bijuteria", "Roupa", "Peruca"],
     "Música": ["Aparelhagem de Som", "Dj", "Luzes", "Karaoke"],
     "Empregada Doméstica": ["Engomadeira", "Lavadeira", "Arrumadeira", "Baba interna"],
     "Carro": ["Aluguer de carro", "motorista ou Taxista Privado"],
-    "Compras & E-Commerce": ["Geral", "Eletrónicos", "Acessórios"],
-    "Eventos": ["Organização", "Decoração", "Buffet"],
-    "Comida & Restaurantes": ["Rápida", "Tradicional", "Catering"],
-    "Supermercados": ["Mercearia", "Bebidas", "Limpeza"],
-    "Farmácia & Saúde": ["Medicamentos", "Ortopedia", "Cuidados Pessoais"],
-    "Alojamento & Reservas": ["Apartamento", "Quarto", "Casa de Campo"],
-    "Prestação de Serviços": ["Manutenção", "Consultoria", "Transportes"]
+    "Aluguer de Casa": ["T1", "T2", "T3"]
 }
 
 SUBCATEGORIAS_ALUGUER = ["Tudo"] + list(ESPECIALIDADES_POR_CATEGORIA.keys())
@@ -150,7 +144,7 @@ if "termo_pesquisa" not in st.session_state:
     st.session_state["termo_pesquisa"] = ""
 
 def main():
-    # --- CABEÇALHO SUPERIOR (Logótipo, Pesquisa e Menu de Ação / Boneco) ---
+    # --- CABEÇALHO SUPERIOR ---
     col_logo, col_search, col_user = st.columns([2.5, 6, 2])
     
     with col_logo:
@@ -237,24 +231,26 @@ def mostrar_pagina_inicial():
 
 def mostrar_registo():
     st.header("📝 Registo de Novo Prestador / Empresa")
-    st.write("Preencha os campos abaixo. Ao selecionar a Categoria, as respetivas especialidades abrirão automaticamente.")
+    st.write("Preencha os campos abaixo. As especialidades atualizam-se de forma estrita conforme a categoria escolhida.")
 
-    # Usamos st.form para submeter os dados corretamente
+    # Usamos st.selectbox fora do form para atualizar dinamicamente a especialidade sem conflito de cache
+    categoria = st.selectbox("Categoria Principal*", list(ESPECIALIDADES_POR_CATEGORIA.keys()))
+    
+    # Lista estrita correspondente à categoria selecionada
+    opcoes_especialidade = ESPECIALIDADES_POR_CATEGORIA.get(categoria, ["Geral"])
+
     with st.form("form_registo"):
         col1, col2 = st.columns(2)
         with col1:
             nome_empresa = st.text_input("Nome e Sobrenome/Empresa*")
             telefone = st.text_input("Número de Telefone*")
             
-            # Categoria principal escolhida pelo utilizador
-            categoria = st.selectbox("Categoria Principal*", list(ESPECIALIDADES_POR_CATEGORIA.keys()))
-            
         with col2:
             password = st.text_input("Palavra-passe (Password)*", type="password")
             confirmar_password = st.text_input("Confirmar Palavra-passe*", type="password")
             
-            # Especialidade aberta automaticamente com base na categoria selecionada em cima
-            especialidade = st.selectbox("Especialidade da Categoria*", ESPECIALIDADES_POR_CATEGORIA.get(categoria, ["Geral"]))
+        # Especialidade restrita estritamente à categoria escolhida acima
+        especialidade = st.selectbox("Especialidade da Categoria*", opcoes_especialidade)
 
         st.markdown("---")
         st.markdown("### 📍 Localização")
@@ -299,7 +295,7 @@ def mostrar_registo():
 
 def mostrar_login_prestador():
     st.header("🔐 Área Restrita do Prestador")
-    st.write("Aceda para gerir os seus dados, serviços e carregar até 20 fotos.")
+    st.write("Aceda para gerir os seus dados, serviços e carregar/apagar livremente as suas fotos (limite de 20).")
 
     with st.form("form_login"):
         nome_pesquisa = st.text_input("Nome e Sobrenome/Empresa")
