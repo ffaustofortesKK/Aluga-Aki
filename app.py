@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado para a aplicação
+# Estilo CSS personalizado para a aplicação e efeito de Zoom nas fotos do perfil
 st.markdown("""
     <style>
     .stApp {
@@ -78,6 +78,20 @@ st.markdown("""
         font-weight: bold;
         color: #FFFFFF;
         z-index: 10;
+    }
+    /* Efeito Zoom de 50% ao passar o cursor na galeria do perfil */
+    .zoom-foto {
+        transition: transform 0.3s ease;
+        max-width: 100%;
+        height: 160px;
+        object-fit: contain;
+        border-radius: 6px;
+        background-color: #00000008;
+    }
+    .zoom-foto:hover {
+        transform: scale(1.5);
+        z-index: 99;
+        position: relative;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -261,33 +275,58 @@ def mostrar_pagina_inicial():
         col_atual = cols[idx % 4]
         with col_atual:
             fotos_p = p.get("fotos", [])
+            pid = p['id']
             
+            # Carrossel Automático de de 2 em 2 segundos para o catálogo
+            slides_html = ""
+            if fotos_p:
+                for i_f, f_obj in enumerate(fotos_p):
+                    b64 = f_obj.get("dados_base64", "")
+                    leg = f_obj.get("legenda", "")
+                    d_style = "display: block;" if i_f == 0 else "display: none;"
+                    slides_html += f"""
+                        <div class="slide-{pid}" style="{d_style} text-align: center; height: 130px; background-color: #F8FAFC;">
+                            <img src="data:image/jpeg;base64,{b64}" style="max-width: 100%; height: 105px; object-fit: contain; margin-top: 4px;">
+                            <div style="font-size: 10px; color: #666; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;">{leg}</div>
+                        </div>
+                    """
+            else:
+                slides_html = """
+                    <div style="height: 130px; display: flex; align-items: center; justify-content: center; background-color: #F8FAFC;">
+                        <span style="font-size: 28px;">📦</span>
+                    </div>
+                """
+
+            script_carrossel = f"""
+                <script>
+                (function() {{
+                    const slides = document.querySelectorAll('.slide-{pid}');
+                    if (slides.length > 1) {{
+                        let currentIdx = 0;
+                        setInterval(() => {{
+                            slides[currentIdx].style.display = 'none';
+                            currentIdx = (currentIdx + 1) % slides.length;
+                            slides[currentIdx].style.display = 'block';
+                        }}, 2000);
+                    }}
+                }})();
+                </script>
+            """
+
             st.markdown(f"""
                 <div class="product-card">
                     <span class="badge-caucao">Verificado</span>
                     <span class="badge-empresa">{p.get('especialidade', p['categoria'])}</span>
+                    <div style="border-bottom: 1px solid #EAEAEA;">
+                        {slides_html}
+                    </div>
+                    <div style="padding: 8px 12px 10px 12px;">
+                        <div class="product-title" style="margin: 0 0 2px 0;">{p['nome_empresa']}</div>
+                        <div class="product-loc" style="margin: 0 0 4px 0;">Contacto: {p['telefone']}</div>
+                        <div style="font-size: 11px; color: #555;">📍 {p['localizacao']}</div>
+                    </div>
                 </div>
-            """, unsafe_allow_html=True)
-            
-            # Exibição limpa da imagem de capa do prestador no cartão do catálogo
-            if fotos_p:
-                b64_capa = fotos_p[0].get("dados_base64", "")
-                leg_capa = fotos_p[0].get("legenda", "")
-                if b64_capa:
-                    st.markdown(f'<div style="text-align: center; background-color: #F8FAFC; padding: 5px; border-bottom: 1px solid #EAEAEA;"><img src="data:image/jpeg;base64,{b64_capa}" style="max-width: 100%; height: 130px; object-fit: contain; border-radius: 4px;"></div>', unsafe_allow_html=True)
-                    if leg_capa:
-                        st.markdown(f'<div style="font-size: 11px; color: #666; text-align: center; font-style: italic; margin-top: 2px;">{leg_capa}</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown('<div style="height: 130px; display: flex; align-items: center; justify-content: center; background-color: #F8FAFC;"><span style="font-size: 28px;">📦</span></div>', unsafe_allow_html=True)
-            else:
-                st.markdown('<div style="height: 130px; display: flex; align-items: center; justify-content: center; background-color: #F8FAFC;"><span style="font-size: 28px;">📦</span></div>', unsafe_allow_html=True)
-
-            st.markdown(f"""
-                <div style="padding: 0 12px 10px 12px;">
-                    <div class="product-title" style="margin: 8px 0 2px 0;">{p['nome_empresa']}</div>
-                    <div class="product-loc" style="margin: 0 0 6px 0;">Contacto: {p['telefone']}</div>
-                    <div style="font-size: 11px; color: #555;">📍 {p['localizacao']}</div>
-                </div>
+                {script_carrossel}
             """, unsafe_allow_html=True)
 
             if st.button("Ver Perfil Completo", key=f"ver_perfil_{p['id']}", use_container_width=True):
@@ -318,7 +357,7 @@ def mostrar_detalhe_prestador():
     st.write(prestador.get('sobre_empresa', 'Sem descrição fornecida.'))
 
     st.markdown("---")
-    st.markdown("### 🖼️ Galeria de Fotografias e Legendas")
+    st.markdown("### 🖼️ Galeria de Fotografias e Legendas (Passe o cursor para ampliar)")
     fotos = prestador.get("fotos", [])
     
     if not fotos:
@@ -333,9 +372,9 @@ def mostrar_detalhe_prestador():
                 
                 if b64_dados:
                     st.markdown(f"""
-                        <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; background-color: #F8FAFC; margin-bottom: 15px; text-align: center;">
-                            <img src="data:image/jpeg;base64,{b64_dados}" style="max-width: 100%; height: 160px; object-fit: contain; border-radius: 6px; margin-bottom: 8px; background-color: #00000008;">
-                            <div style="font-size: 13px; font-weight: 600; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;">{nome_arq}</div>
+                        <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; background-color: #F8FAFC; margin-bottom: 15px; text-align: center; overflow: hidden;">
+                            <img src="data:image/jpeg;base64,{b64_dados}" class="zoom-foto">
+                            <div style="font-size: 13px; font-weight: 600; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; margin-top: 8px;">{nome_arq}</div>
                             <div style="font-size: 12px; color: #64748B; margin-top: 4px; font-style: italic; text-align: left;">{legenda}</div>
                         </div>
                     """, unsafe_allow_html=True)
@@ -505,7 +544,7 @@ def mostrar_login_prestador():
                     st.markdown("<hr style='margin: 10px 0px; border: 0.3px solid #EAEAEA;'>", unsafe_allow_html=True)
 
 def mostrar_painel_admin():
-    st.header("⚙️️ Painel de Administração")
+    st.header("⚙️ Painel de Administração")
     st.write("Insira as credenciais de Administrador para gerir a plataforma.")
 
     with st.form("form_admin_login"):
