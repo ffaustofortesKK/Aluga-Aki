@@ -261,58 +261,33 @@ def mostrar_pagina_inicial():
         col_atual = cols[idx % 4]
         with col_atual:
             fotos_p = p.get("fotos", [])
-            pid = p['id']
             
-            slides_html = ""
-            if fotos_p:
-                for i_f, f_obj in enumerate(fotos_p):
-                    b64 = f_obj.get("dados_base64", "")
-                    leg = f_obj.get("legenda", "")
-                    d_style = "display: block;" if i_f == 0 else "display: none;"
-                    slides_html += f"""
-                        <div class="slide-item-{pid}" style="{d_style} text-align: center; height: 130px; background-color: #F8FAFC;">
-                            <img src="data:image/jpeg;base64,{b64}" style="max-width: 100%; height: 105px; object-fit: contain; margin-top: 4px;">
-                            <div style="font-size: 10px; color: #666; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;">{leg}</div>
-                        </div>
-                    """
-            else:
-                slides_html = """
-                    <div style="height: 130px; display: flex; align-items: center; justify-content: center; background-color: #F8FAFC;">
-                        <span style="font-size: 28px;">📦</span>
-                    </div>
-                """
-
-            # Script JavaScript limpo com intervalo de 2000ms (2 segundos)
-            script_js = f"""
-                <script>
-                setTimeout(function() {{
-                    const slides = document.querySelectorAll('.slide-item-{pid}');
-                    if (slides.length > 1) {{
-                        let index = 0;
-                        setInterval(function() {{
-                            slides[index].style.display = 'none';
-                            index = (index + 1) % slides.length;
-                            slides[index].style.display = 'block';
-                        }}, 2000);
-                    }}
-                }}, 500);
-                </script>
-            """
-
             st.markdown(f"""
                 <div class="product-card">
                     <span class="badge-caucao">Verificado</span>
                     <span class="badge-empresa">{p.get('especialidade', p['categoria'])}</span>
-                    <div style="border-bottom: 1px solid #EAEAEA;">
-                        {slides_html}
-                    </div>
-                    <div style="padding: 8px 12px 10px 12px;">
-                        <div class="product-title" style="margin: 0 0 2px 0;">{p['nome_empresa']}</div>
-                        <div class="product-loc" style="margin: 0 0 4px 0;">Contacto: {p['telefone']}</div>
-                        <div style="font-size: 11px; color: #555;">📍 {p['localizacao']}</div>
-                    </div>
                 </div>
-                {script_js}
+            """, unsafe_allow_html=True)
+            
+            # Exibição limpa da imagem de capa do prestador no cartão do catálogo
+            if fotos_p:
+                b64_capa = fotos_p[0].get("dados_base64", "")
+                leg_capa = fotos_p[0].get("legenda", "")
+                if b64_capa:
+                    st.markdown(f'<div style="text-align: center; background-color: #F8FAFC; padding: 5px; border-bottom: 1px solid #EAEAEA;"><img src="data:image/jpeg;base64,{b64_capa}" style="max-width: 100%; height: 130px; object-fit: contain; border-radius: 4px;"></div>', unsafe_allow_html=True)
+                    if leg_capa:
+                        st.markdown(f'<div style="font-size: 11px; color: #666; text-align: center; font-style: italic; margin-top: 2px;">{leg_capa}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<div style="height: 130px; display: flex; align-items: center; justify-content: center; background-color: #F8FAFC;"><span style="font-size: 28px;">📦</span></div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div style="height: 130px; display: flex; align-items: center; justify-content: center; background-color: #F8FAFC;"><span style="font-size: 28px;">📦</span></div>', unsafe_allow_html=True)
+
+            st.markdown(f"""
+                <div style="padding: 0 12px 10px 12px;">
+                    <div class="product-title" style="margin: 8px 0 2px 0;">{p['nome_empresa']}</div>
+                    <div class="product-loc" style="margin: 0 0 6px 0;">Contacto: {p['telefone']}</div>
+                    <div style="font-size: 11px; color: #555;">📍 {p['localizacao']}</div>
+                </div>
             """, unsafe_allow_html=True)
 
             if st.button("Ver Perfil Completo", key=f"ver_perfil_{p['id']}", use_container_width=True):
