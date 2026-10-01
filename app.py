@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado para a aplicação, botões vermelhos e efeito Zoom
+# Estilo CSS personalizado para a aplicação, botões e efeito Zoom
 st.markdown("""
     <style>
     .stApp {
@@ -80,7 +80,7 @@ st.markdown("""
         z-index: 10;
     }
     
-    /* ESTILIZAÇÃO DE TODOS OS BOTÕES: Vermelho, letras brancas, negrito e sombra preta */
+    /* BOTÕES GERAIS: Vermelho, letras brancas, negrito e sombra preta */
     .stButton>button {
         background-color: #D32F2F !important;
         color: #FFFFFF !important;
@@ -92,7 +92,14 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #C62828 !important;
         color: #FFFFFF !important;
-        border-color: #880E4F !important;
+    }
+
+    /* REDUÇÃO DE 50% NO TAMANHO DOS BOTÕES DE ESPECIALIDADES */
+    .especialidade-container .stButton>button {
+        transform: scale(0.5);
+        transform-origin: left center;
+        margin-top: -15px;
+        margin-bottom: -15px;
     }
 
     /* Efeito Zoom de +50% ao passar o cursor na galeria do perfil */
@@ -209,21 +216,36 @@ def main():
 
     st.markdown("<hr style='margin: 15px 0px 10px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    # --- MENU ESTILO MEGA-MENU ---
+    # --- MENU ESTILO MEGA-MENU (Categoria Ativa a Amarelo) ---
     categorias_disponiveis = ["Tudo"] + list(ESPECIALIDADES_POR_CATEGORIA.keys())
     menu_cols = st.columns(len(categorias_disponiveis))
     
+    filtro_atual = st.session_state["filtro_subcat"]
+
     for idx, cat in enumerate(categorias_disponiveis):
         with menu_cols[idx]:
+            # Se a categoria atual estiver selecionada, aplicamos estilo CSS inline amarelo
+            is_active = (filtro_atual == cat or (cat == "Tudo" and filtro_atual == "Tudo"))
+            if is_active:
+                st.markdown("""
+                    <style>
+                    div.stButton > button[key^="menu_cat_""" + str(idx) + """"] {
+                        background-color: #FFC107 !important;
+                        border-color: #FFA000 !important;
+                        color: #FFFFFF !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+            
             if st.button(cat, key=f"menu_cat_{idx}", use_container_width=True):
                 st.session_state["filtro_subcat"] = cat
                 st.session_state["prestador_selecionado_id"] = None
                 st.session_state["pagina_atual"] = "🏠 Página Inicial"
                 st.rerun()
 
-    filtro_atual = st.session_state["filtro_subcat"]
+    # Sub-especialidades reduzidas em 50%
     if filtro_atual in ESPECIALIDADES_POR_CATEGORIA:
-        st.markdown(f"<div style='background-color: #F8F9FA; padding: 10px; border-radius: 8px; border: 1px solid #EAEAEA; margin-top: 5px; margin-bottom: 15px;'><b>Especialidades em {filtro_atual}:</b>", unsafe_allow_html=True)
+        st.markdown(f"<div class='especialidade-container' style='background-color: #F8F9FA; padding: 10px; border-radius: 8px; border: 1px solid #EAEAEA; margin-top: 5px; margin-bottom: 15px;'><b>Especialidades em {filtro_atual}:</b>", unsafe_allow_html=True)
         esp_cols = st.columns(len(ESPECIALIDADES_POR_CATEGORIA[filtro_atual]))
         for i_esp, esp in enumerate(ESPECIALIDADES_POR_CATEGORIA[filtro_atual]):
             with esp_cols[i_esp]:
