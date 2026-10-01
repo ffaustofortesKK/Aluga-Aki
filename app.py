@@ -91,7 +91,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Dicionário completo de Categorias e respetivas Especialidades solicitadas
+# Dicionário exato de Especialidades por Categoria solicitado
 ESPECIALIDADES_POR_CATEGORIA = {
     "Moda": ["Sapato", "Bijuteria", "Roupa", "Peruca"],
     "Música": ["Aparelhagem de Som", "Dj", "Luzes", "Karaoke"],
@@ -105,6 +105,8 @@ ESPECIALIDADES_POR_CATEGORIA = {
     "Alojamento & Reservas": ["Apartamento", "Quarto", "Casa de Campo"],
     "Prestação de Serviços": ["Manutenção", "Consultoria", "Transportes"]
 }
+
+SUBCATEGORIAS_ALUGUER = ["Tudo"] + list(ESPECIALIDADES_POR_CATEGORIA.keys())
 
 DB_FILE = "dados_prestadores.json"
 
@@ -138,6 +140,9 @@ def guardar_dados(prestadores):
 if "prestadores" not in st.session_state:
     st.session_state["prestadores"] = carregar_dados()
 
+if "filtro_subcat" not in st.session_state:
+    st.session_state["filtro_subcat"] = "Tudo"
+
 if "pagina_atual" not in st.session_state:
     st.session_state["pagina_atual"] = "🏠 Página Inicial"
 
@@ -149,9 +154,7 @@ def main():
     col_logo, col_search, col_user = st.columns([2.5, 6, 2])
     
     with col_logo:
-        if st.button("🏠 AKITEM", use_container_width=True):
-            st.session_state["pagina_atual"] = "🏠 Página Inicial"
-            st.rerun()
+        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=180)
         
     with col_search:
         st.session_state["termo_pesquisa"] = st.text_input("Pesquisa Geral", placeholder="Pesquisar artigos ou prestadores...", value=st.session_state["termo_pesquisa"], label_visibility="collapsed")
@@ -188,9 +191,24 @@ def mostrar_pagina_inicial():
     st.markdown('<div class="hero-title">Procure o que precisa, <span class="hero-highlight">em pouco tempo.</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Carros, som, tendas, trajes, equipamentos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
 
-    st.markdown("### Prestadores e Serviços Disponíveis")
+    # --- BARRA DE SUBCATEGORIAS ---
+    sub_cols = st.columns(len(SUBCATEGORIAS_ALUGUER))
+    for idx, sub in enumerate(SUBCATEGORIAS_ALUGUER):
+        with sub_cols[idx]:
+            if st.button(sub, key=f"subcat_btn_{idx}", use_container_width=True):
+                st.session_state["filtro_subcat"] = sub
+                st.rerun()
+
+    st.markdown(f"<small>A filtrar por categoria: <b>{st.session_state['filtro_subcat']}</b></small>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
+
+    st.markdown("### Disponíveis para alugar / prestação")
     
     prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
+
+    filtro = st.session_state["filtro_subcat"]
+    if filtro != "Tudo":
+        prestadores_aprovados = [p for p in prestadores_aprovados if p["categoria"].lower() == filtro.lower() or p.get("especialidade", "").lower() == filtro.lower()]
 
     termo = st.session_state["termo_pesquisa"].strip().lower()
     if termo:
@@ -221,22 +239,22 @@ def mostrar_registo():
     st.header("📝 Registo de Novo Prestador / Empresa")
     st.write("Preencha os campos abaixo. Ao selecionar a Categoria, as respetivas especialidades abrirão automaticamente.")
 
+    # Usamos st.form para submeter os dados corretamente
     with st.form("form_registo"):
         col1, col2 = st.columns(2)
         with col1:
             nome_empresa = st.text_input("Nome e Sobrenome/Empresa*")
             telefone = st.text_input("Número de Telefone*")
             
-            # Escolha da Categoria que ativa automaticamente as especialidades correspondentes
+            # Categoria principal escolhida pelo utilizador
             categoria = st.selectbox("Categoria Principal*", list(ESPECIALIDADES_POR_CATEGORIA.keys()))
             
         with col2:
             password = st.text_input("Palavra-passe (Password)*", type="password")
             confirmar_password = st.text_input("Confirmar Palavra-passe*", type="password")
             
-            # Especialidade dinâmica correspondente à categoria selecionada em cima
-            lista_especialidades = ESPECIALIDADES_POR_CATEGORIA.get(categoria, ["Geral"])
-            especialidade = st.selectbox("Especialidade da Categoria*", lista_especialidades)
+            # Especialidade aberta automaticamente com base na categoria selecionada em cima
+            especialidade = st.selectbox("Especialidade da Categoria*", ESPECIALIDADES_POR_CATEGORIA.get(categoria, ["Geral"]))
 
         st.markdown("---")
         st.markdown("### 📍 Localização")
