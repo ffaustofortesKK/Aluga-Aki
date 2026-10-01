@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado para a aplicação e efeito Zoom de 50% na galeria de perfil
+# Estilo CSS personalizado para a aplicação, botões vermelhos e efeito Zoom
 st.markdown("""
     <style>
     .stApp {
@@ -79,7 +79,23 @@ st.markdown("""
         color: #FFFFFF;
         z-index: 10;
     }
-    /* Efeito Zoom exato de +50% (scale 1.5) ao passar o cursor na galeria do perfil */
+    
+    /* ESTILIZAÇÃO DE TODOS OS BOTÕES: Vermelho, letras brancas, negrito e sombra preta */
+    .stButton>button {
+        background-color: #D32F2F !important;
+        color: #FFFFFF !important;
+        font-weight: bold !important;
+        text-shadow: 1px 1px 2px #000000 !important;
+        border: 1px solid #B71C1C !important;
+        border-radius: 8px !important;
+    }
+    .stButton>button:hover {
+        background-color: #C62828 !important;
+        color: #FFFFFF !important;
+        border-color: #880E4F !important;
+    }
+
+    /* Efeito Zoom de +50% ao passar o cursor na galeria do perfil */
     .zoom-foto {
         transition: transform 0.3s ease-in-out;
         max-width: 100%;
