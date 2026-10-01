@@ -28,16 +28,10 @@ st.markdown("""
         color: #111111;
         text-align: center;
         margin-top: 10px;
-        margin-bottom: 5px;
+        margin-bottom: 25px;
     }
     .hero-highlight {
         color: #FF5722;
-    }
-    .hero-subtitle {
-        font-size: 15px;
-        color: #666666;
-        text-align: center;
-        margin-bottom: 30px;
     }
     .product-card {
         background-color: #FFFFFF;
@@ -164,11 +158,14 @@ def main():
     with col_user:
         acao_utilizador = st.selectbox(
             "Utilizador", 
-            ["👤 Entrar / Conta", "📝 Registar Nova Empresa", "🔐 Login Prestador", "⚙️️ Administração (Adminff24)"],
+            ["👤 Opções de Conta...", "🔑 Iniciar Conta", "📝 Novo registo", "🔐 Login Prestador", "⚙️ Administração"],
             label_visibility="collapsed"
         )
         
-        if "Registar" in acao_utilizador:
+        if "Iniciar Conta" in acao_utilizador:
+            st.session_state["pagina_atual"] = "🔐 Login Prestador"
+            st.session_state["prestador_selecionado_id"] = None
+        elif "Novo registo" in acao_utilizador:
             st.session_state["pagina_atual"] = "📝 Registar Empresa"
             st.session_state["prestador_selecionado_id"] = None
         elif "Prestador" in acao_utilizador:
@@ -176,9 +173,6 @@ def main():
             st.session_state["prestador_selecionado_id"] = None
         elif "Administração" in acao_utilizador:
             st.session_state["pagina_atual"] = "⚙️ Administração"
-            st.session_state["prestador_selecionado_id"] = None
-        elif "Entrar" in acao_utilizador and st.session_state["pagina_atual"] not in ["🏠 Página Inicial"]:
-            st.session_state["pagina_atual"] = "🏠 Página Inicial"
             st.session_state["prestador_selecionado_id"] = None
 
     st.markdown("<hr style='margin: 15px 0px 10px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
@@ -222,7 +216,6 @@ def main():
 
 def mostrar_pagina_inicial():
     st.markdown('<div class="hero-title">Procure o que precisa, <span class="hero-highlight">em pouco tempo.</span></div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-subtitle">Carros, som, tendas, trajes, equipamentos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
 
     prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
 
@@ -237,7 +230,7 @@ def mostrar_pagina_inicial():
                     with cols_slider[idx_s]:
                         st.markdown(f"""
                             <div class="product-card" style="padding: 10px; text-align: center;">
-                                <span style="font-size: 28px;">🏷️️</span>
+                                <span style="font-size: 28px;">🏷️</span>
                                 <div style="font-size: 13px; font-weight: bold; color: #FF5722;">{cat}</div>
                                 <div class="product-title">{exemplo_cat['nome_empresa']}</div>
                                 <div class="product-loc">📍 {exemplo_cat['localizacao']}</div>
@@ -435,10 +428,9 @@ def mostrar_login_prestador():
                     st.success("Alterações guardadas com sucesso!")
 
             st.markdown("---")
-            st.markdown("### 🖼 Gestão de Fotografias e Legendas (Até 20 fotos)")
+            st.markdown("### 🖼️️ Gestão de Fotografias e Legendas (Até 20 fotos)")
             st.write(f"Fotos atuais carregadas: **{len(p_atual.get('fotos', []))} / 20**")
 
-            # Uploader com chave dinâmica baseada no session_state para limpar após adicionar
             uploader_widget_key = f"uploader_fotos_{st.session_state['uploader_key']}"
             novas_fotos = st.file_uploader("Carregar novas fotografias", type=["jpg", "png", "jpeg"], accept_multiple_files=True, key=uploader_widget_key)
             
@@ -461,7 +453,6 @@ def mostrar_login_prestador():
                         p_atual["fotos"] = fotos_atuais
                         guardar_dados(st.session_state["prestadores"])
                         
-                        # Incrementa a chave para limpar o componente st.file_uploader
                         st.session_state["uploader_key"] += 1
                         st.success("Fotos carregadas com sucesso!")
                         st.rerun()
