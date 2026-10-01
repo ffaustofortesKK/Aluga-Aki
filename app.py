@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import base64
 from datetime import datetime
 
 # Configuração da página e tema visual
@@ -114,8 +115,12 @@ def guardar_dados(prestadores):
             if isinstance(f, dict):
                 fotos_serializaveis.append(f)
             else:
+                # Se for umUploadedFile do Streamlit, convertemos para base64 para persistência correta
+                bytes_data = f.getvalue()
+                b64_str = base64.b64encode(bytes_data).decode("utf-8")
                 fotos_serializaveis.append({
                     "nome_ficheiro": getattr(f, "name", "foto_carregada.jpg"),
+                    "dados_base64": b64_str,
                     "legenda": getattr(f, "legenda", "")
                 })
         p_copia["fotos"] = fotos_serializaveis
@@ -304,21 +309,31 @@ def mostrar_detalhe_prestador():
     if not fotos:
         st.info("Este prestador ainda não carregou fotografias.")
     else:
-        # Galeria melhorada com pré-visualização visual clara e elegante em cartões
         cols_f = st.columns(3)
         for idx_f, foto in enumerate(fotos):
             with cols_f[idx_f % 3]:
+                b64_dados = foto.get("dados_base64", "")
                 nome_arq = foto.get('nome_ficheiro', f'Foto {idx_f+1}')
                 legenda = foto.get('legenda', 'Sem legenda')
-                st.markdown(f"""
-                    <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; background-color: #F8FAFC; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                        <div style="height: 140px; background-color: #EDF2F7; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; border: 1px dashed #CBD5E1;">
-                            <span style="font-size: 32px;">🖼️</span>
+                
+                if b64_dados:
+                    st.markdown(f"""
+                        <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; background-color: #F8FAFC; margin-bottom: 15px;">
+                            <img src="data:image/jpeg;base64,{b64_dados}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;">
+                            <div style="font-size: 13px; font-weight: 600; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{nome_arq}</div>
+                            <div style="font-size: 12px; color: #64748B; margin-top: 4px; font-style: italic;">{legenda}</div>
                         </div>
-                        <div style="font-size: 13px; font-weight: 600; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{nome_arq}</div>
-                        <div style="font-size: 12px; color: #64748B; margin-top: 4px; font-style: italic;">{legenda}</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                        <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; background-color: #F8FAFC; margin-bottom: 15px;">
+                            <div style="height: 140px; background-color: #EDF2F7; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                                <span style="font-size: 32px;">🖼️</span>
+                            </div>
+                            <div style="font-size: 13px; font-weight: 600; color: #1E293B;">{nome_arq}</div>
+                            <div style="font-size: 12px; color: #64748B; margin-top: 4px; font-style: italic;">{legenda}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
 def mostrar_registo():
     st.header("📝 Registo de Novo Prestador / Empresa")
@@ -429,29 +444,44 @@ def mostrar_login_prestador():
                     st.error("Limite excedido! O máximo permitido é de 20 fotografias.")
                 else:
                     for f in novas_fotos:
-                        fotos_atuais.append({"nome_ficheiro": f.name, "legenda": ""})
+                        bytes_data = f.getvalue()
+                        b64_str = base64.b64encode(bytes_data).decode("utf-8")
+                        fotos_atuais.append({
+                            "nome_ficheiro": f.name,
+                            "dados_base64": b64_str,
+                            "legenda": ""
+                        })
                     p_atual["fotos"] = fotos_atuais
                     guardar_dados(st.session_state["prestadores"])
                     st.success("Fotos carregadas com sucesso!")
                     st.rerun()
 
             if p_atual.get("fotos"):
-                st.markdown("#### Fotografias Publicadas (Adicione ou edite legendas e remova se desejar):")
+                st.markdown("#### Fotografias Publicadas (Visualize a miniatura, adicione legendas e remova se desejar):")
                 for idx_f, foto in enumerate(p_atual["fotos"]):
-                    col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
-                    with col_f1:
-                        st.write(f"📸 {foto.get('nome_ficheiro', f'Foto {idx_f+1}')}")
-                    with col_f2:
-                        nova_legenda = st.text_input(f"Legenda foto {idx_f+1}", value=foto.get("legenda", ""), key=f"leg_input_{idx_f}")
+                    col_img, col_leg, col_btn = st.columns([1, 2.5, 1])
+                    
+                    with col_img:
+                        b64_d = foto.get("dados_base64", "")
+                        if b64_d:
+                            st.markdown(f'<img src="data:image/jpeg;base64,{b64_d}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 6px;">', unsafe_allow_html=True)
+                        else:
+                            st.markdown("📷 *(Sem pré-visualização)*")
+                            
+                    with col_leg:
+                        nova_legenda = st.text_input(f"Legenda foto {idx_f+1} ({foto.get('nome_ficheiro', '')})", value=foto.get("legenda", ""), key=f"leg_input_{idx_f}")
                         if nova_legenda != foto.get("legenda", ""):
                             foto["legenda"] = nova_legenda
                             guardar_dados(st.session_state["prestadores"])
-                    with col_f3:
+                            
+                    with col_btn:
+                        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
                         if st.button("Apagar", key=f"del_foto_{idx_f}"):
                             p_atual["fotos"].pop(idx_f)
                             guardar_dados(st.session_state["prestadores"])
                             st.success("Foto removida!")
                             st.rerun()
+                    st.markdown("<hr style='margin: 10px 0px; border: 0.3px solid #EAEAEA;'>", unsafe_allow_html=True)
 
 def mostrar_painel_admin():
     st.header("⚙️ Painel de Administração")
