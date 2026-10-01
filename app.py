@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo CSS personalizado
+# Estilo CSS personalizado para simular o menu suspenso moderno
 st.markdown("""
     <style>
     .stApp {
@@ -59,12 +59,6 @@ st.markdown("""
         color: #777777;
         margin: 0 12px 10px 12px;
     }
-    .product-price {
-        font-size: 15px;
-        font-weight: bold;
-        color: #111111;
-        margin: 0 12px 14px 12px;
-    }
     .badge-caucao {
         position: absolute;
         top: 10px;
@@ -91,7 +85,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Dicionário rigoroso de Categorias e Especialidades
+# Dicionário de Categorias e Especialidades
 ESPECIALIDADES_POR_CATEGORIA = {
     "Moda": ["Sapato", "Bijuteria", "Roupa", "Peruca"],
     "Música": ["Aparelhagem de Som", "Dj", "Luzes", "Karaoke"],
@@ -99,8 +93,6 @@ ESPECIALIDADES_POR_CATEGORIA = {
     "Carro": ["Aluguer de carro", "motorista ou Taxista Privado"],
     "Aluguer de Casa": ["T1", "T2", "T3"]
 }
-
-SUBCATEGORIAS_ALUGUER = ["Tudo"] + list(ESPECIALIDADES_POR_CATEGORIA.keys())
 
 DB_FILE = "dados_prestadores.json"
 
@@ -152,11 +144,12 @@ def main():
     col_logo, col_search, col_user = st.columns([2.5, 6, 2])
     
     with col_logo:
-        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=160)
+        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=150)
         # Botão Menu / Início logo abaixo do logótipo
-        if st.button("🏠 Menu / Página Inicial", use_container_width=True):
+        if st.button("🏠 Menu Principal", use_container_width=True):
             st.session_state["pagina_atual"] = "🏠 Página Inicial"
             st.session_state["prestador_selecionado_id"] = None
+            st.session_state["filtro_subcat"] = "Tudo"
             st.rerun()
         
     with col_search:
@@ -182,7 +175,33 @@ def main():
             st.session_state["pagina_atual"] = "🏠 Página Inicial"
             st.session_state["prestador_selecionado_id"] = None
 
-    st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin: 15px 0px 10px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
+
+    # --- MENU ESTILO MEGA-MENU (COMPATÍVEL COM O EXEMPLO EM ANEXO) ---
+    categorias_disponiveis = ["Tudo"] + list(ESPECIALIDADES_POR_CATEGORIA.keys())
+    menu_cols = st.columns(len(categorias_disponiveis))
+    
+    for idx, cat in enumerate(categorias_disponiveis):
+        with menu_cols[idx]:
+            if st.button(cat, key=f"menu_cat_{idx}", use_container_width=True):
+                st.session_state["filtro_subcat"] = cat
+                st.session_state["prestador_selecionado_id"] = None
+                st.session_state["pagina_atual"] = "🏠 Página Inicial"
+                st.rerun()
+
+    # Se uma categoria específica estiver selecionada, mostramos as especialidades abaixo como sub-opções rápidas estilo dropdown
+    filtro_atual = st.session_state["filtro_subcat"]
+    if filtro_atual in ESPECIALIDADES_POR_CATEGORIA:
+        st.markdown(f"<div style='background-color: #F8F9FA; padding: 10px; border-radius: 8px; border: 1px solid #EAEAEA; margin-top: 5px; margin-bottom: 15px;'><b>Especialidades em {filtro_atual}:</b>", unsafe_allow_html=True)
+        esp_cols = st.columns(len(ESPECIALIDADES_POR_CATEGORIA[filtro_atual]))
+        for i_esp, esp in enumerate(ESPECIALIDADES_POR_CATEGORIA[filtro_atual]):
+            with esp_cols[i_esp]:
+                if st.button(esp, key=f"esp_sub_{i_esp}", use_container_width=True):
+                    st.session_state["filtro_subcat"] = esp
+                    st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<hr style='margin: 10px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
     # --- ROTEAMENTO DAS PÁGINAS ---
     if st.session_state.get("prestador_selecionado_id") is not None:
@@ -200,45 +219,32 @@ def mostrar_pagina_inicial():
     st.markdown('<div class="hero-title">Procure o que precisa, <span class="hero-highlight">em pouco tempo.</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Carros, som, tendas, trajes, equipamentos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
 
-    # --- BARRA DE SUBCATEGORIAS ---
-    sub_cols = st.columns(len(SUBCATEGORIAS_ALUGUER))
-    for idx, sub in enumerate(SUBCATEGORIAS_ALUGUER):
-        with sub_cols[idx]:
-            if st.button(sub, key=f"subcat_btn_{idx}", use_container_width=True):
-                st.session_state["filtro_subcat"] = sub
-                st.rerun()
-
-    st.markdown(f"<small>A filtrar por categoria: <b>{st.session_state['filtro_subcat']}</b></small>", unsafe_allow_html=True)
-    st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
-
     prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
 
     # --- SLIDER / DESTAQUE SE ESCOLHER "Tudo" ---
     if st.session_state["filtro_subcat"] == "Tudo":
-        st.markdown("### 🌟 Destaques em Doutrina / Slider de Categorias")
-        
-        # Selecionar um prestador por categoria existente (se disponível)
-        categorias_disponiveis = list(set([p["categoria"] for p in prestadores_aprovados]))
-        if categorias_disponiveis:
-            cols_slider = st.columns(min(len(categorias_disponiveis), 4))
-            for idx_s, cat in enumerate(categorias_disponiveis[:4]):
+        st.markdown("### 🌟 Destaque por Categoria")
+        cat_keys = list(ESPECIALIDADES_POR_CATEGORIA.keys())
+        if cat_keys:
+            cols_slider = st.columns(min(len(cat_keys), 4))
+            for idx_s, cat in enumerate(cat_keys[:4]):
                 exemplo_cat = next((p for p in prestadores_aprovados if p["categoria"] == cat), None)
                 if exemplo_cat:
                     with cols_slider[idx_s]:
                         st.markdown(f"""
                             <div class="product-card" style="padding: 10px; text-align: center;">
-                                <span style="font-size: 30px;">🏷️</span>
-                                <div style="font-size: 13px; font-weight: bold; color: #FF5722;">Categoria: {cat}</div>
+                                <span style="font-size: 28px;">🏷️</span>
+                                <div style="font-size: 13px; font-weight: bold; color: #FF5722;">{cat}</div>
                                 <div class="product-title">{exemplo_cat['nome_empresa']}</div>
                                 <div class="product-loc">📍 {exemplo_cat['localizacao']}</div>
                             </div>
                         """, unsafe_allow_html=True)
-                        if st.button(f"Ver {exemplo_cat['nome_empresa']}", key=f"slider_btn_{exemplo_cat['id']}"):
+                        if st.button(f"Ver {exemplo_cat['nome_empresa']}", key=f"slider_btn_{exemplo_cat['id']}", use_container_width=True):
                             st.session_state["prestador_selecionado_id"] = exemplo_cat['id']
                             st.rerun()
         st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    st.markdown("### Catálogo Geral / Prestadores Disponíveis")
+    st.markdown(f"### Catálogo — Filtro Ativo: `{st.session_state['filtro_subcat']}`")
 
     filtro = st.session_state["filtro_subcat"]
     if filtro != "Tudo":
@@ -257,8 +263,8 @@ def mostrar_pagina_inicial():
         with col_atual:
             st.markdown(f"""
                 <div class="product-card">
-                    <div style="position: relative; background-color: #f8f9fa; height: 140px; display: flex; align-items: center; justify-content: center;">
-                        <span style="font-size: 30px;">📦</span>
+                    <div style="position: relative; background-color: #f8f9fa; height: 130px; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 28px;">📦</span>
                         <span class="badge-caucao">Verificado</span>
                         <span class="badge-empresa">{p.get('especialidade', p['categoria'])}</span>
                     </div>
@@ -409,7 +415,7 @@ def mostrar_login_prestador():
                     st.success("Alterações guardadas com sucesso!")
 
             st.markdown("---")
-            st.markdown("### 🖼️ Gestão de Fotografias e Legendas (Até 20 fotos)")
+            st.markdown("### 🖼️️ Gestão de Fotografias e Legendas (Até 20 fotos)")
             st.write(f"Fotos atuais carregadas: **{len(p_atual.get('fotos', []))} / 20**")
 
             novas_fotos = st.file_uploader("Carregar novas fotografias", type=["jpg", "png", "jpeg"], accept_multiple_files=True, key="uploader_fotos")
