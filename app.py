@@ -283,7 +283,6 @@ def mostrar_pagina_inicial():
                 </div>
             """, unsafe_allow_html=True)
             
-            # Exibição limpa da imagem de capa no catálogo
             if fotos_p:
                 b64_capa = fotos_p[0].get("dados_base64", "")
                 leg_capa = fotos_p[0].get("legenda", "")
@@ -332,7 +331,6 @@ def mostrar_detalhe_prestador():
     st.write(prestador.get('sobre_empresa', 'Sem descrição fornecida.'))
 
     st.markdown("---")
-    st.markdown("### 🖼️ Galeria de Fotografias e Legendas *(Passe o cursor por cima da foto para ampliar +50%)*" )
     fotos = prestador.get("fotos", [])
     
     if not fotos:
