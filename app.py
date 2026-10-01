@@ -91,29 +91,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-CATEGORIAS_PRINCIPAIS = [
-    "Início", 
-    "Compras & E-Commerce", 
-    "Alugar", 
-    "Eventos", 
-    "Comida & Restaurantes", 
-    "Supermercados", 
-    "Farmácia & Saúde", 
-    "Alojamento & Reservas", 
-    "Prestação de Serviços"
-]
-
-# Dicionário atualizado de Especialidades por Categoria de Aluguer / Prestação
+# Dicionário completo de Categorias e respetivas Especialidades solicitadas
 ESPECIALIDADES_POR_CATEGORIA = {
     "Moda": ["Sapato", "Bijuteria", "Roupa", "Peruca"],
     "Música": ["Aparelhagem de Som", "Dj", "Luzes", "Karaoke"],
     "Empregada Doméstica": ["Engomadeira", "Lavadeira", "Arrumadeira", "Baba interna"],
     "Carro": ["Aluguer de carro", "motorista ou Taxista Privado"],
-    "Materiais de construção": ["Geral", "Ferramentas", "Andaimes"],
-    "Materiais de Decoração": ["Cadeiras", "Mesas", "Tendas", "Iluminação Decorativa"]
+    "Compras & E-Commerce": ["Geral", "Eletrónicos", "Acessórios"],
+    "Eventos": ["Organização", "Decoração", "Buffet"],
+    "Comida & Restaurantes": ["Rápida", "Tradicional", "Catering"],
+    "Supermercados": ["Mercearia", "Bebidas", "Limpeza"],
+    "Farmácia & Saúde": ["Medicamentos", "Ortopedia", "Cuidados Pessoais"],
+    "Alojamento & Reservas": ["Apartamento", "Quarto", "Casa de Campo"],
+    "Prestação de Serviços": ["Manutenção", "Consultoria", "Transportes"]
 }
-
-SUBCATEGORIAS_ALUGUER = ["Tudo"] + list(ESPECIALIDADES_POR_CATEGORIA.keys())
 
 DB_FILE = "dados_prestadores.json"
 
@@ -130,7 +121,6 @@ def guardar_dados(prestadores):
     dados_para_salvar = []
     for p in prestadores:
         p_copia = p.copy()
-        # Converter objetos UploadedFile para nomes para permitir salvamento JSON estruturado
         fotos_serializaveis = []
         for f in p_copia.get("fotos", []):
             if isinstance(f, dict):
@@ -148,9 +138,6 @@ def guardar_dados(prestadores):
 if "prestadores" not in st.session_state:
     st.session_state["prestadores"] = carregar_dados()
 
-if "filtro_subcat" not in st.session_state:
-    st.session_state["filtro_subcat"] = "Tudo"
-
 if "pagina_atual" not in st.session_state:
     st.session_state["pagina_atual"] = "🏠 Página Inicial"
 
@@ -158,18 +145,18 @@ if "termo_pesquisa" not in st.session_state:
     st.session_state["termo_pesquisa"] = ""
 
 def main():
-    # --- CABEÇALHO SUPERIOR (Logótipo, Pesquisa e Botão de Utilizador/Boneco) ---
+    # --- CABEÇALHO SUPERIOR (Logótipo, Pesquisa e Menu de Ação / Boneco) ---
     col_logo, col_search, col_user = st.columns([2.5, 6, 2])
     
     with col_logo:
-        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=180)
+        if st.button("🏠 AKITEM", use_container_width=True):
+            st.session_state["pagina_atual"] = "🏠 Página Inicial"
+            st.rerun()
         
     with col_search:
-        # Apenas campo de pesquisa principal
         st.session_state["termo_pesquisa"] = st.text_input("Pesquisa Geral", placeholder="Pesquisar artigos ou prestadores...", value=st.session_state["termo_pesquisa"], label_visibility="collapsed")
         
     with col_user:
-        # Menu do "Boneco" no canto superior direito conforme solicitado
         acao_utilizador = st.selectbox(
             "Utilizador", 
             ["👤 Entrar / Conta", "📝 Registar Nova Empresa", "🔐 Login Prestador", "⚙️ Administração (Adminff24)"],
@@ -185,17 +172,7 @@ def main():
         elif "Entrar" in acao_utilizador and st.session_state["pagina_atual"] not in ["🏠 Página Inicial"]:
             st.session_state["pagina_atual"] = "🏠 Página Inicial"
 
-    # --- BARRA DE NAVEGAÇÃO DE CATEGORIAS TOPO ---
-    cols_nav = st.columns(9)
-    for idx, cat in enumerate(CATEGORIAS_PRINCIPAIS):
-        with cols_nav[idx]:
-            if st.button(cat, key=f"nav_top_{idx}", use_container_width=True):
-                if cat in ["Início", "Alugar", "Prestação de Serviços"]:
-                    st.session_state["pagina_atual"] = "🏠 Página Inicial"
-                    st.session_state["filtro_subcat"] = "Tudo"
-                    st.rerun()
-
-    st.markdown("<hr style='margin: 10px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
     # --- ROTEAMENTO DAS PÁGINAS ---
     if st.session_state["pagina_atual"] == "🏠 Página Inicial":
@@ -211,24 +188,9 @@ def mostrar_pagina_inicial():
     st.markdown('<div class="hero-title">Procure o que precisa, <span class="hero-highlight">em pouco tempo.</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Carros, som, tendas, trajes, equipamentos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
 
-    # --- BARRA DE SUBCATEGORIAS ---
-    sub_cols = st.columns(len(SUBCATEGORIAS_ALUGUER))
-    for idx, sub in enumerate(SUBCATEGORIAS_ALUGUER):
-        with sub_cols[idx]:
-            if st.button(sub, key=f"subcat_btn_{idx}", use_container_width=True):
-                st.session_state["filtro_subcat"] = sub
-                st.rerun()
-
-    st.markdown(f"<small>A filtrar por categoria: <b>{st.session_state['filtro_subcat']}</b></small>", unsafe_allow_html=True)
-    st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
-
-    st.markdown("### Disponíveis para alugar")
+    st.markdown("### Prestadores e Serviços Disponíveis")
     
     prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
-
-    filtro = st.session_state["filtro_subcat"]
-    if filtro != "Tudo":
-        prestadores_aprovados = [p for p in prestadores_aprovados if p["categoria"].lower() == filtro.lower() or p.get("especialidade", "").lower() == filtro.lower()]
 
     termo = st.session_state["termo_pesquisa"].strip().lower()
     if termo:
@@ -241,11 +203,6 @@ def mostrar_pagina_inicial():
     for idx, p in enumerate(prestadores_aprovados):
         col_atual = cols[idx % 4]
         with col_atual:
-            foto_capta = "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=500"
-            if p.get("fotos"):
-                # Mostrar indicador visual se houver fotos carregadas
-                pass
-            
             st.markdown(f"""
                 <div class="product-card">
                     <div style="position: relative; background-color: #f8f9fa; height: 160px; display: flex; align-items: center; justify-content: center;">
@@ -262,20 +219,24 @@ def mostrar_pagina_inicial():
 
 def mostrar_registo():
     st.header("📝 Registo de Novo Prestador / Empresa")
-    st.write("Preencha os campos abaixo com os seus dados e os do seu contacto alternativo.")
+    st.write("Preencha os campos abaixo. Ao selecionar a Categoria, as respetivas especialidades abrirão automaticamente.")
 
     with st.form("form_registo"):
         col1, col2 = st.columns(2)
         with col1:
             nome_empresa = st.text_input("Nome e Sobrenome/Empresa*")
             telefone = st.text_input("Número de Telefone*")
+            
+            # Escolha da Categoria que ativa automaticamente as especialidades correspondentes
             categoria = st.selectbox("Categoria Principal*", list(ESPECIALIDADES_POR_CATEGORIA.keys()))
+            
         with col2:
             password = st.text_input("Palavra-passe (Password)*", type="password")
             confirmar_password = st.text_input("Confirmar Palavra-passe*", type="password")
             
-        # Especialidade dinâmica baseada na categoria escolhida
-        especialidade = st.selectbox("Especifique a Especialidade*", ESPECIALIDADES_POR_CATEGORIA.get(categoria, ["Geral"]))
+            # Especialidade dinâmica correspondente à categoria selecionada em cima
+            lista_especialidades = ESPECIALIDADES_POR_CATEGORIA.get(categoria, ["Geral"])
+            especialidade = st.selectbox("Especialidade da Categoria*", lista_especialidades)
 
         st.markdown("---")
         st.markdown("### 📍 Localização")
@@ -359,7 +320,6 @@ def mostrar_login_prestador():
             st.markdown("### 🖼️ Gestão de Fotografias (Até 20 fotos)")
             st.write(f"Fotos atuais carregadas: **{len(p_atual.get('fotos', []))} / 20**")
 
-            # Upload de novas fotos com limite de 20
             novas_fotos = st.file_uploader("Carregar novas fotografias", type=["jpg", "png", "jpeg"], accept_multiple_files=True, key="uploader_fotos")
             
             if st.button("Adicionar Fotos Selecionadas"):
@@ -374,7 +334,6 @@ def mostrar_login_prestador():
                     st.success("Fotos carregadas com sucesso!")
                     st.rerun()
 
-            # Gestão e exclusão de fotos existentes
             if p_atual.get("fotos"):
                 st.markdown("#### Fotografias Guardadas (Pode remover indesejadas):")
                 for idx_f, foto in enumerate(p_atual["fotos"]):
@@ -398,7 +357,6 @@ def mostrar_painel_admin():
         login_admin = st.form_submit_button("Entrar como Administrador")
 
         if login_admin:
-            # Validação estricta das tuas credenciais de Administrador
             if user_input == "adminff24" and pass_input == "ffkaraoke2026":
                 st.session_state["admin_autenticado"] = True
                 st.success("Sessão de Administrador iniciada com sucesso!")
