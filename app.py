@@ -103,19 +103,17 @@ CATEGORIAS_PRINCIPAIS = [
     "Prestação de Serviços"
 ]
 
-# Subcategorias atualizadas conforme pedido
 SUBCATEGORIAS_ALUGUER = [
     "Tudo",
-    "Moda",             # Sapato, Bijuteria, Roupa, Peruca
-    "Música",           # Aparelhagem de Som, DJ, Luzes, Karaoke
-    "Empregada Doméstica", # Engomadeira, Lavadeira, Arrumadeira, Baba interna
-    "Carro",            # Aluguer de carro, motorista ou Taxista Privado
+    "Moda",
+    "Música",
+    "Empregada Doméstica",
+    "Carro",
     "Materiais de construção", 
     "Materiais de Decoração", 
     "Limpeza de Obra"
 ]
 
-# Mapeamento detalhado para os filtros/seleções secundárias se necessário
 OPCOES_DETALHADAS = {
     "Moda": ["Sapato", "Bijuteria", "Roupa", "Peruca"],
     "Música": ["Aparelhagem de Som", "DJ", "Luzes", "Karaoke"],
@@ -138,7 +136,6 @@ def guardar_dados(prestadores):
     dados_para_salvar = []
     for p in prestadores:
         p_copia = p.copy()
-        # Garantir que as fotos são guardadas de forma segura (nomes/legendas)
         fotos_serializaveis = []
         for f in p_copia.get("fotos", []):
             if isinstance(f, dict):
@@ -164,7 +161,6 @@ if "termo_pesquisa" not in st.session_state:
     st.session_state["termo_pesquisa"] = ""
 
 def main():
-    # --- CABEÇALHO SUPERIOR ---
     col_logo, col_search, col_user = st.columns([2.5, 6, 2])
     
     with col_logo:
@@ -189,7 +185,6 @@ def main():
         elif "Entrar" in acao_utilizador and st.session_state["pagina_atual"] not in ["🏠 Página Inicial"]:
             st.session_state["pagina_atual"] = "🏠 Página Inicial"
 
-    # --- BARRA DE NAVEGAÇÃO TOPO ---
     cols_nav = st.columns(9)
     for idx, cat in enumerate(CATEGORIAS_PRINCIPAIS):
         with cols_nav[idx]:
@@ -201,7 +196,6 @@ def main():
 
     st.markdown("<hr style='margin: 10px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    # --- ROTEAMENTO ---
     if st.session_state["pagina_atual"] == "🏠 Página Inicial":
         mostrar_pagina_inicial()
     elif st.session_state["pagina_atual"] == "📝 Registar Empresa":
@@ -215,7 +209,6 @@ def mostrar_pagina_inicial():
     st.markdown('<div class="hero-title">Procure o que precisa, <span class="hero-highlight">em pouco tempo.</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Moda, som, carros, serviços domésticos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
 
-    # --- BARRA DE PESQUISA ---
     with st.container():
         sc1, sc2 = st.columns([9, 1])
         with sc1:
@@ -225,7 +218,6 @@ def mostrar_pagina_inicial():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- BARRA DE SUBCATEGORIAS ---
     sub_cols = st.columns(len(SUBCATEGORIAS_ALUGUER))
     for idx, sub in enumerate(SUBCATEGORIAS_ALUGUER):
         with sub_cols[idx]:
@@ -286,7 +278,6 @@ def mostrar_registo():
             telefone = st.text_input("Número de Telefone*")
             categoria = st.selectbox("Categoria Principal*", [c for c in SUBCATEGORIAS_ALUGUER if c != "Tudo"])
             
-            # Sub-opções dinâmicas com base na categoria escolhida
             especialidade = ""
             if categoria in OPCOES_DETALHADAS:
                 especialidade = st.selectbox("Específica / Especialidade*", OPCOES_DETALHADAS[categoria])
@@ -352,12 +343,10 @@ def mostrar_login_prestador():
             st.markdown("---")
             st.subheader(f"Painel de Controlo: {p_atual['nome_empresa']}")
             
-            # Gestão de Fotos (Até 20 fotos com opção de apagar/carregar)
             st.markdown("### 🖼️ Gestão de Fotografias (Máximo 20)")
             fotos_atuais = p_atual.get("fotos", [])
-            st.write(Temas de Fotos Atuais: `{len(fotos_atuais)}/20`)
+            st.write(f"Total de Fotos Atuais: {len(fotos_atuais)}/20")
 
-            # Mostrar fotos atuais com botão para apagar
             if fotos_atuais:
                 cols_f = st.columns(4)
                 for idx, f_item in enumerate(fotos_atuais):
@@ -370,7 +359,6 @@ def mostrar_login_prestador():
                             st.success("Fotografia removida com sucesso!")
                             st.rerun()
 
-            # Adicionar novas fotos por URL ou link de imagem
             if len(fotos_atuais) < 20:
                 st.markdown("#### Adicionar Nova Fotografia")
                 with st.form(f"form_add_foto_{p_id}"):
@@ -406,7 +394,7 @@ def mostrar_login_prestador():
                     st.success("Dados atualizados com sucesso!")
 
 def mostrar_painel_admin():
-    st.header("⚙️ Painel de Administração")
+    st.header("⚙️️ Painel de Administração")
     st.write("Insira as credenciais de Administrador para gerir a plataforma.")
 
     with st.form("form_admin_login"):
