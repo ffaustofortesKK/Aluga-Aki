@@ -4,14 +4,14 @@ import json
 import os
 from datetime import datetime
 
-# Configuração da página e tema visual
+# Configuração da página e tema visual (Layout limpo estilo marketplace)
 st.set_page_config(
     page_title="AKITEM — Procure o que precisa, em pouco tempo",
     page_icon="🤝",
     layout="wide"
 )
 
-# Estilo CSS personalizado para o marketplace
+# Estilo CSS personalizado para imitar fielmente o design profissional
 st.markdown("""
     <style>
     .stApp {
@@ -103,23 +103,17 @@ CATEGORIAS_PRINCIPAIS = [
     "Prestação de Serviços"
 ]
 
-SUBCATEGORIAS_ALUGUER = [
-    "Tudo",
-    "Moda",
-    "Música",
-    "Empregada Doméstica",
-    "Carro",
-    "Materiais de construção", 
-    "Materiais de Decoração", 
-    "Limpeza de Obra"
-]
-
-OPCOES_DETALHADAS = {
+# Dicionário atualizado de Especialidades por Categoria de Aluguer / Prestação
+ESPECIALIDADES_POR_CATEGORIA = {
     "Moda": ["Sapato", "Bijuteria", "Roupa", "Peruca"],
-    "Música": ["Aparelhagem de Som", "DJ", "Luzes", "Karaoke"],
+    "Música": ["Aparelhagem de Som", "Dj", "Luzes", "Karaoke"],
     "Empregada Doméstica": ["Engomadeira", "Lavadeira", "Arrumadeira", "Baba interna"],
-    "Carro": ["Aluguer de carro", "Motorista ou Taxista Privado"]
+    "Carro": ["Aluguer de carro", "motorista ou Taxista Privado"],
+    "Materiais de construção": ["Geral", "Ferramentas", "Andaimes"],
+    "Materiais de Decoração": ["Cadeiras", "Mesas", "Tendas", "Iluminação Decorativa"]
 }
+
+SUBCATEGORIAS_ALUGUER = ["Tudo"] + list(ESPECIALIDADES_POR_CATEGORIA.keys())
 
 DB_FILE = "dados_prestadores.json"
 
@@ -136,12 +130,15 @@ def guardar_dados(prestadores):
     dados_para_salvar = []
     for p in prestadores:
         p_copia = p.copy()
+        # Converter objetos UploadedFile para nomes para permitir salvamento JSON estruturado
         fotos_serializaveis = []
         for f in p_copia.get("fotos", []):
             if isinstance(f, dict):
                 fotos_serializaveis.append(f)
             else:
-                fotos_serializaveis.append({"url": str(f), "descricao": "Foto de produto"})
+                fotos_serializaveis.append({
+                    "nome_ficheiro": getattr(f, "name", "foto_carregada.jpg")
+                })
         p_copia["fotos"] = fotos_serializaveis
         dados_para_salvar.append(p_copia)
         
@@ -161,15 +158,18 @@ if "termo_pesquisa" not in st.session_state:
     st.session_state["termo_pesquisa"] = ""
 
 def main():
+    # --- CABEÇALHO SUPERIOR (Logótipo, Pesquisa e Botão de Utilizador/Boneco) ---
     col_logo, col_search, col_user = st.columns([2.5, 6, 2])
     
     with col_logo:
         st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=180)
         
     with col_search:
-        st.text_input("Pesquisa Geral", placeholder="Pesquisar produtos, lojas ou serviços...", label_visibility="collapsed")
+        # Apenas campo de pesquisa principal
+        st.session_state["termo_pesquisa"] = st.text_input("Pesquisa Geral", placeholder="Pesquisar artigos ou prestadores...", value=st.session_state["termo_pesquisa"], label_visibility="collapsed")
         
     with col_user:
+        # Menu do "Boneco" no canto superior direito conforme solicitado
         acao_utilizador = st.selectbox(
             "Utilizador", 
             ["👤 Entrar / Conta", "📝 Registar Nova Empresa", "🔐 Login Prestador", "⚙️ Administração (Adminff24)"],
@@ -185,17 +185,19 @@ def main():
         elif "Entrar" in acao_utilizador and st.session_state["pagina_atual"] not in ["🏠 Página Inicial"]:
             st.session_state["pagina_atual"] = "🏠 Página Inicial"
 
+    # --- BARRA DE NAVEGAÇÃO DE CATEGORIAS TOPO ---
     cols_nav = st.columns(9)
     for idx, cat in enumerate(CATEGORIAS_PRINCIPAIS):
         with cols_nav[idx]:
             if st.button(cat, key=f"nav_top_{idx}", use_container_width=True):
-                if cat in ["Início", "Alugar"]:
+                if cat in ["Início", "Alugar", "Prestação de Serviços"]:
                     st.session_state["pagina_atual"] = "🏠 Página Inicial"
                     st.session_state["filtro_subcat"] = "Tudo"
                     st.rerun()
 
     st.markdown("<hr style='margin: 10px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
+    # --- ROTEAMENTO DAS PÁGINAS ---
     if st.session_state["pagina_atual"] == "🏠 Página Inicial":
         mostrar_pagina_inicial()
     elif st.session_state["pagina_atual"] == "📝 Registar Empresa":
@@ -207,17 +209,9 @@ def main():
 
 def mostrar_pagina_inicial():
     st.markdown('<div class="hero-title">Procure o que precisa, <span class="hero-highlight">em pouco tempo.</span></div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-subtitle">Moda, som, carros, serviços domésticos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-subtitle">Carros, som, tendas, trajes, equipamentos e muito mais, de particulares e empresas verificadas.</div>', unsafe_allow_html=True)
 
-    with st.container():
-        sc1, sc2 = st.columns([9, 1])
-        with sc1:
-            st.session_state["termo_pesquisa"] = st.text_input("O quê", placeholder="Pesquisar artigos...", value=st.session_state["termo_pesquisa"], label_visibility="collapsed")
-        with sc2:
-            st.button("🔍", use_container_width=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
+    # --- BARRA DE SUBCATEGORIAS ---
     sub_cols = st.columns(len(SUBCATEGORIAS_ALUGUER))
     for idx, sub in enumerate(SUBCATEGORIAS_ALUGUER):
         with sub_cols[idx]:
@@ -228,17 +222,17 @@ def mostrar_pagina_inicial():
     st.markdown(f"<small>A filtrar por categoria: <b>{st.session_state['filtro_subcat']}</b></small>", unsafe_allow_html=True)
     st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    st.markdown("### Disponíveis para alugar / Serviços")
+    st.markdown("### Disponíveis para alugar")
     
     prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
 
     filtro = st.session_state["filtro_subcat"]
     if filtro != "Tudo":
-        prestadores_aprovados = [p for p in prestadores_aprovados if p.get("categoria") == filtro or p.get("especialidade") == filtro]
+        prestadores_aprovados = [p for p in prestadores_aprovados if p["categoria"].lower() == filtro.lower() or p.get("especialidade", "").lower() == filtro.lower()]
 
     termo = st.session_state["termo_pesquisa"].strip().lower()
     if termo:
-        prestadores_aprovados = [p for p in prestadores_aprovados if termo in p["nome_empresa"].lower() or termo in p["categoria"].lower()]
+        prestadores_aprovados = [p for p in prestadores_aprovados if termo in p["nome_empresa"].lower() or termo in p["categoria"].lower() or termo in p.get("especialidade", "").lower()]
 
     if not prestadores_aprovados:
         st.info("Nenhum prestador ou artigo encontrado com os critérios selecionados.")
@@ -246,22 +240,21 @@ def mostrar_pagina_inicial():
     cols = st.columns(4)
     for idx, p in enumerate(prestadores_aprovados):
         col_atual = cols[idx % 4]
-        foto_capra = "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=500"
-        if p.get("fotos") and len(p["fotos"]) > 0:
-            primeira = p["fotos"][0]
-            if isinstance(primeira, dict) and "url" in primeira:
-                foto_capra = primeira["url"]
-
         with col_atual:
+            foto_capta = "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=500"
+            if p.get("fotos"):
+                # Mostrar indicador visual se houver fotos carregadas
+                pass
+            
             st.markdown(f"""
                 <div class="product-card">
-                    <div style="position: relative;">
-                        <img src="{foto_capra}" style="width: 100%; height: 160px; object-fit: cover;">
+                    <div style="position: relative; background-color: #f8f9fa; height: 160px; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 35px;">📦</span>
                         <span class="badge-caucao">Verificado</span>
-                        <span class="badge-empresa">Empresa</span>
+                        <span class="badge-empresa">{p.get('especialidade', p['categoria'])}</span>
                     </div>
                     <div class="product-title">{p['nome_empresa']}</div>
-                    <div class="product-loc">Categoria: {p.get('categoria')} ({p.get('especialidade', '')})</div>
+                    <div class="product-loc">Contacto: {p['telefone']}</div>
                     <div style="font-size: 11px; color: #555; margin: 0 12px 6px 12px;">📍 {p['localizacao']}</div>
                     <div class="product-price">Sob Consulta</div>
                 </div>
@@ -269,33 +262,40 @@ def mostrar_pagina_inicial():
 
 def mostrar_registo():
     st.header("📝 Registo de Novo Prestador / Empresa")
-    st.write("Preencha os dados abaixo com as informações exigidas para submeter o seu negócio.")
+    st.write("Preencha os campos abaixo com os seus dados e os do seu contacto alternativo.")
 
     with st.form("form_registo"):
         col1, col2 = st.columns(2)
         with col1:
-            nome_empresa = st.text_input("Nome e Sobrenome / Empresa*")
+            nome_empresa = st.text_input("Nome e Sobrenome/Empresa*")
             telefone = st.text_input("Número de Telefone*")
-            categoria = st.selectbox("Categoria Principal*", [c for c in SUBCATEGORIAS_ALUGUER if c != "Tudo"])
-            
-            especialidade = ""
-            if categoria in OPCOES_DETALHADAS:
-                especialidade = st.selectbox("Específica / Especialidade*", OPCOES_DETALHADAS[categoria])
-
+            categoria = st.selectbox("Categoria Principal*", list(ESPECIALIDADES_POR_CATEGORIA.keys()))
         with col2:
-            contacto_alternativo = st.text_input("Contacto alternativo*")
-            nome_contacto_alt = st.text_input("Nome e Sobrenome / Empresa do Contacto alternativo*")
             password = st.text_input("Palavra-passe (Password)*", type="password")
             confirmar_password = st.text_input("Confirmar Palavra-passe*", type="password")
+            
+        # Especialidade dinâmica baseada na categoria escolhida
+        especialidade = st.selectbox("Especifique a Especialidade*", ESPECIALIDADES_POR_CATEGORIA.get(categoria, ["Geral"]))
 
         st.markdown("---")
-        localizacao = st.text_input("Localização (Ex: Luanda, Talatona, Rua X)*")
-        sobre_empresa = st.text_area("Fale sobre os seus produtos e serviços:*", height=100)
+        st.markdown("### 📍 Localização")
+        localizacao = st.text_input("Localização (Bairro, Município, Rua)*")
+
+        st.markdown("---")
+        st.markdown("### 📞 Contacto Alternativo")
+        col_alt1, col_alt2 = st.columns(2)
+        with col_alt1:
+            contacto_alternativo = st.text_input("Contacto alternativo (Número)*")
+        with col_alt2:
+            nome_contacto_alt = st.text_input("Nome e Sobrenome/Empresa do Contacto alternativo*")
+
+        st.markdown("---")
+        sobre_empresa = st.text_area("Descrição dos seus produtos ou serviços*", height=100)
 
         submitted = st.form_submit_button("Submeter Registo para Aprovação")
 
         if submitted:
-            if not nome_empresa or not telefone or not localizacao or not password or not contacto_alternativo or not nome_contacto_alt:
+            if not nome_empresa or not telefone or not localizacao or not contacto_alternativo or not nome_contacto_alt or not password:
                 st.error("Preencha todos os campos obrigatórios (*).")
             elif password != confirmar_password:
                 st.error("As palavras-passe não coincidem.")
@@ -306,11 +306,11 @@ def mostrar_registo():
                     "telefone": telefone,
                     "categoria": categoria,
                     "especialidade": especialidade,
+                    "password": password,
+                    "localizacao": localizacao,
                     "contacto_alternativo": contacto_alternativo,
                     "nome_contacto_alt": nome_contacto_alt,
-                    "password": password,
                     "sobre_empresa": sobre_empresa,
-                    "localizacao": localizacao,
                     "fotos": [],
                     "status": "Pendente"
                 }
@@ -320,10 +320,10 @@ def mostrar_registo():
 
 def mostrar_login_prestador():
     st.header("🔐 Área Restrita do Prestador")
-    st.write("Aceda para gerir os seus dados, serviços e carregar até 20 fotografias dos seus produtos.")
+    st.write("Aceda para gerir os seus dados, serviços e carregar até 20 fotos.")
 
     with st.form("form_login"):
-        nome_pesquisa = st.text_input("Nome e Sobrenome / Empresa")
+        nome_pesquisa = st.text_input("Nome e Sobrenome/Empresa")
         pass_input = st.text_input("Palavra-passe", type="password")
         entrar = st.form_submit_button("Entrar")
 
@@ -341,60 +341,55 @@ def mostrar_login_prestador():
         
         if p_atual:
             st.markdown("---")
-            st.subheader(f"Painel de Controlo: {p_atual['nome_empresa']}")
+            st.subheader(f"Gestão de Perfil e Fotos: {p_atual['nome_empresa']}")
             
-            st.markdown("### 🖼️ Gestão de Fotografias (Máximo 20)")
-            fotos_atuais = p_atual.get("fotos", [])
-            st.write(f"Total de Fotos Atuais: {len(fotos_atuais)}/20")
-
-            if fotos_atuais:
-                cols_f = st.columns(4)
-                for idx, f_item in enumerate(fotos_atuais):
-                    with cols_f[idx % 4]:
-                        url_foto = f_item.get("url", "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=500")
-                        st.image(url_foto, width=120)
-                        if st.button(f"🗑️ Apagar Foto {idx+1}", key=f"del_foto_{p_id}_{idx}"):
-                            p_atual["fotos"].pop(idx)
-                            guardar_dados(st.session_state["prestadores"])
-                            st.success("Fotografia removida com sucesso!")
-                            st.rerun()
-
-            if len(fotos_atuais) < 20:
-                st.markdown("#### Adicionar Nova Fotografia")
-                with st.form(f"form_add_foto_{p_id}"):
-                    nova_url = st.text_input("Link / URL Direto da Imagem (Ex: Unsplash, Imgur, etc.)")
-                    desc_foto = st.text_input("Descrição ou Nome do Artigo/Serviço")
-                    add_btn = st.form_submit_button("Carregar Fotografia")
-                    
-                    if add_btn:
-                        if nova_url:
-                            p_atual["fotos"].append({"url": nova_url, "descricao": desc_foto})
-                            guardar_dados(st.session_state["prestadores"])
-                            st.success("Fotografia adicionada com sucesso!")
-                            st.rerun()
-                        else:
-                            st.error("Insira um link de imagem válido.")
-            else:
-                st.warning("Atingiu o limite máximo de 20 fotografias.")
-
-            st.markdown("---")
-            st.subheader("Editar Dados de Contacto e Localização")
-            with st.form("form_update_dados"):
-                novo_tel = st.text_input("Telefone", value=p_atual['telefone'])
-                novo_alt = st.text_input("Contacto Alternativo", value=p_atual.get('contacto_alternativo', ''))
-                nova_loc = st.text_input("Localização", value=p_atual['localizacao'])
-                novo_sobre = st.text_area("Descrição", value=p_atual.get('sobre_empresa', ''))
+            with st.form("form_update_prestador"):
+                novo_tel = st.text_input("Atualizar Telefone", value=p_atual['telefone'])
+                nova_loc = st.text_input("Atualizar Localização", value=p_atual['localizacao'])
+                novo_sobre = st.text_area("Atualizar Descrição", value=p_atual.get('sobre_empresa', ''))
                 
-                if st.form_submit_button("Guardar Alterações"):
+                if st.form_submit_button("Guardar Alterações Básicas"):
                     p_atual['telefone'] = novo_tel
-                    p_atual['contacto_alternativo'] = novo_alt
                     p_atual['localizacao'] = nova_loc
                     p_atual['sobre_empresa'] = novo_sobre
                     guardar_dados(st.session_state["prestadores"])
-                    st.success("Dados atualizados com sucesso!")
+                    st.success("Alterações guardadas com sucesso!")
+
+            st.markdown("---")
+            st.markdown("### 🖼️ Gestão de Fotografias (Até 20 fotos)")
+            st.write(f"Fotos atuais carregadas: **{len(p_atual.get('fotos', []))} / 20**")
+
+            # Upload de novas fotos com limite de 20
+            novas_fotos = st.file_uploader("Carregar novas fotografias", type=["jpg", "png", "jpeg"], accept_multiple_files=True, key="uploader_fotos")
+            
+            if st.button("Adicionar Fotos Selecionadas"):
+                fotos_atuais = p_atual.get("fotos", [])
+                if len(fotos_atuais) + len(novas_fotos) > 20:
+                    st.error("Limite excedido! O máximo permitido é de 20 fotografias.")
+                else:
+                    for f in novas_fotos:
+                        fotos_atuais.append({"nome_ficheiro": f.name})
+                    p_atual["fotos"] = fotos_atuais
+                    guardar_dados(st.session_state["prestadores"])
+                    st.success("Fotos carregadas com sucesso!")
+                    st.rerun()
+
+            # Gestão e exclusão de fotos existentes
+            if p_atual.get("fotos"):
+                st.markdown("#### Fotografias Guardadas (Pode remover indesejadas):")
+                for idx_f, foto in enumerate(p_atual["fotos"]):
+                    col_f1, col_f2 = st.columns([4, 1])
+                    with col_f1:
+                        st.write(f"📸 {foto.get('nome_ficheiro', f'Foto {idx_f+1}')}")
+                    with col_f2:
+                        if st.button("Apagar", key=f"del_foto_{idx_f}"):
+                            p_atual["fotos"].pop(idx_f)
+                            guardar_dados(st.session_state["prestadores"])
+                            st.success("Foto removida!")
+                            st.rerun()
 
 def mostrar_painel_admin():
-    st.header("⚙️️ Painel de Administração")
+    st.header("⚙️ Painel de Administração")
     st.write("Insira as credenciais de Administrador para gerir a plataforma.")
 
     with st.form("form_admin_login"):
@@ -403,6 +398,7 @@ def mostrar_painel_admin():
         login_admin = st.form_submit_button("Entrar como Administrador")
 
         if login_admin:
+            # Validação estricta das tuas credenciais de Administrador
             if user_input == "adminff24" and pass_input == "ffkaraoke2026":
                 st.session_state["admin_autenticado"] = True
                 st.success("Sessão de Administrador iniciada com sucesso!")
@@ -424,9 +420,9 @@ def mostrar_painel_admin():
                 col1, col2, col3 = st.columns([3, 2, 2])
                 with col1:
                     st.write(f"**Nome/Empresa:** {p['nome_empresa']}")
-                    st.write(f"**Categoria:** {p['categoria']} ({p.get('especialidade','')}) | **Estado:** `{p['status']}`")
-                    st.write(f"**Tel:** {p['telefone']} | **Local:** {p['localizacao']}")
-                    st.write(f"**Contacto Alt:** {p.get('contacto_alternativo')} ({p.get('nome_contacto_alt')})")
+                    st.write(f"**Categoria:** {p['categoria']} ({p.get('especialidade', 'Geral')}) | **Estado:** `{p['status']}`")
+                    st.write(f"**Local:** {p['localizacao']} | **Tel:** {p['telefone']}")
+                    st.write(f"**Contacto Alternativo:** {p.get('nome_contacto_alt', 'N/A')} ({p.get('contacto_alternativo', 'N/A')})")
                 with col2:
                     if p['status'] == "Pendente":
                         if st.button(f"Aprovar", key=f"apr_{i}"):
@@ -442,7 +438,7 @@ def mostrar_painel_admin():
                     if st.button(f"🗑️ Excluir", key=f"del_{i}"):
                         st.session_state["prestadores"].pop(i)
                         guardar_dados(prestadores)
-                        st.success("Empresa removida!")
+                        st.success("Prestador removido!")
                         st.rerun()
                 st.markdown("---")
 
