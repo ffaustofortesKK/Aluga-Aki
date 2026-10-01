@@ -115,7 +115,6 @@ def guardar_dados(prestadores):
             if isinstance(f, dict):
                 fotos_serializaveis.append(f)
             else:
-                # Se for umUploadedFile do Streamlit, convertemos para base64 para persistência correta
                 bytes_data = f.getvalue()
                 b64_str = base64.b64encode(bytes_data).decode("utf-8")
                 fotos_serializaveis.append({
@@ -144,6 +143,9 @@ if "termo_pesquisa" not in st.session_state:
 if "prestador_selecionado_id" not in st.session_state:
     st.session_state["prestador_selecionado_id"] = None
 
+if "uploader_key" not in st.session_state:
+    st.session_state["uploader_key"] = 0
+
 def main():
     # --- CABEÇALHO SUPERIOR ---
     col_logo, col_search, col_user = st.columns([2.5, 6, 2])
@@ -162,7 +164,7 @@ def main():
     with col_user:
         acao_utilizador = st.selectbox(
             "Utilizador", 
-            ["👤 Entrar / Conta", "📝 Registar Nova Empresa", "🔐 Login Prestador", "⚙️ Administração (Adminff24)"],
+            ["👤 Entrar / Conta", "📝 Registar Nova Empresa", "🔐 Login Prestador", "⚙️️ Administração (Adminff24)"],
             label_visibility="collapsed"
         )
         
@@ -235,7 +237,7 @@ def mostrar_pagina_inicial():
                     with cols_slider[idx_s]:
                         st.markdown(f"""
                             <div class="product-card" style="padding: 10px; text-align: center;">
-                                <span style="font-size: 28px;">🏷️</span>
+                                <span style="font-size: 28px;">🏷️️</span>
                                 <div style="font-size: 13px; font-weight: bold; color: #FF5722;">{cat}</div>
                                 <div class="product-title">{exemplo_cat['nome_empresa']}</div>
                                 <div class="product-loc">📍 {exemplo_cat['localizacao']}</div>
@@ -318,16 +320,16 @@ def mostrar_detalhe_prestador():
                 
                 if b64_dados:
                     st.markdown(f"""
-                        <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; background-color: #F8FAFC; margin-bottom: 15px;">
-                            <img src="data:image/jpeg;base64,{b64_dados}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{nome_arq}</div>
-                            <div style="font-size: 12px; color: #64748B; margin-top: 4px; font-style: italic;">{legenda}</div>
+                        <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; background-color: #F8FAFC; margin-bottom: 15px; text-align: center;">
+                            <img src="data:image/jpeg;base64,{b64_dados}" style="max-width: 100%; height: 160px; object-fit: contain; border-radius: 6px; margin-bottom: 8px; background-color: #00000008;">
+                            <div style="font-size: 13px; font-weight: 600; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;">{nome_arq}</div>
+                            <div style="font-size: 12px; color: #64748B; margin-top: 4px; font-style: italic; text-align: left;">{legenda}</div>
                         </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""
                         <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; background-color: #F8FAFC; margin-bottom: 15px;">
-                            <div style="height: 140px; background-color: #EDF2F7; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                            <div style="height: 160px; background-color: #EDF2F7; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
                                 <span style="font-size: 32px;">🖼️</span>
                             </div>
                             <div style="font-size: 13px; font-weight: 600; color: #1E293B;">{nome_arq}</div>
@@ -436,35 +438,43 @@ def mostrar_login_prestador():
             st.markdown("### 🖼 Gestão de Fotografias e Legendas (Até 20 fotos)")
             st.write(f"Fotos atuais carregadas: **{len(p_atual.get('fotos', []))} / 20**")
 
-            novas_fotos = st.file_uploader("Carregar novas fotografias", type=["jpg", "png", "jpeg"], accept_multiple_files=True, key="uploader_fotos")
+            # Uploader com chave dinâmica baseada no session_state para limpar após adicionar
+            uploader_widget_key = f"uploader_fotos_{st.session_state['uploader_key']}"
+            novas_fotos = st.file_uploader("Carregar novas fotografias", type=["jpg", "png", "jpeg"], accept_multiple_files=True, key=uploader_widget_key)
             
             if st.button("Adicionar Fotos Selecionadas"):
-                fotos_atuais = p_atual.get("fotos", [])
-                if len(fotos_atuais) + len(novas_fotos) > 20:
-                    st.error("Limite excedido! O máximo permitido é de 20 fotografias.")
+                if not novas_fotos:
+                    st.warning("Selecione pelo menos uma fotografia antes de clicar em adicionar.")
                 else:
-                    for f in novas_fotos:
-                        bytes_data = f.getvalue()
-                        b64_str = base64.b64encode(bytes_data).decode("utf-8")
-                        fotos_atuais.append({
-                            "nome_ficheiro": f.name,
-                            "dados_base64": b64_str,
-                            "legenda": ""
-                        })
-                    p_atual["fotos"] = fotos_atuais
-                    guardar_dados(st.session_state["prestadores"])
-                    st.success("Fotos carregadas com sucesso!")
-                    st.rerun()
+                    fotos_atuais = p_atual.get("fotos", [])
+                    if len(fotos_atuais) + len(novas_fotos) > 20:
+                        st.error("Limite excedido! O máximo permitido é de 20 fotografias.")
+                    else:
+                        for f in novas_fotos:
+                            bytes_data = f.getvalue()
+                            b64_str = base64.b64encode(bytes_data).decode("utf-8")
+                            fotos_atuais.append({
+                                "nome_ficheiro": f.name,
+                                "dados_base64": b64_str,
+                                "legenda": ""
+                            })
+                        p_atual["fotos"] = fotos_atuais
+                        guardar_dados(st.session_state["prestadores"])
+                        
+                        # Incrementa a chave para limpar o componente st.file_uploader
+                        st.session_state["uploader_key"] += 1
+                        st.success("Fotos carregadas com sucesso!")
+                        st.rerun()
 
             if p_atual.get("fotos"):
-                st.markdown("#### Fotografias Publicadas (Visualize a miniatura, adicione legendas e remova se desejar):")
+                st.markdown("#### Fotografias Publicadas (Visualize a miniatura completa, adicione legendas e remova se desejar):")
                 for idx_f, foto in enumerate(p_atual["fotos"]):
                     col_img, col_leg, col_btn = st.columns([1, 2.5, 1])
                     
                     with col_img:
                         b64_d = foto.get("dados_base64", "")
                         if b64_d:
-                            st.markdown(f'<img src="data:image/jpeg;base64,{b64_d}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 6px;">', unsafe_allow_html=True)
+                            st.markdown(f'<div style="text-align: center;"><img src="data:image/jpeg;base64,{b64_d}" style="max-width: 100%; height: 90px; object-fit: contain; border-radius: 6px; background-color: #00000008;"></div>', unsafe_allow_html=True)
                         else:
                             st.markdown("📷 *(Sem pré-visualização)*")
                             
