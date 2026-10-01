@@ -91,7 +91,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Dicionário rigoroso de Categorias e Especialidades exigidas
+# Dicionário rigoroso de Categorias e Especialidades
 ESPECIALIDADES_POR_CATEGORIA = {
     "Moda": ["Sapato", "Bijuteria", "Roupa", "Peruca"],
     "Música": ["Aparelhagem de Som", "Dj", "Luzes", "Karaoke"],
@@ -123,7 +123,8 @@ def guardar_dados(prestadores):
                 fotos_serializaveis.append(f)
             else:
                 fotos_serializaveis.append({
-                    "nome_ficheiro": getattr(f, "name", "foto_carregada.jpg")
+                    "nome_ficheiro": getattr(f, "name", "foto_carregada.jpg"),
+                    "legenda": getattr(f, "legenda", "")
                 })
         p_copia["fotos"] = fotos_serializaveis
         dados_para_salvar.append(p_copia)
@@ -143,12 +144,20 @@ if "pagina_atual" not in st.session_state:
 if "termo_pesquisa" not in st.session_state:
     st.session_state["termo_pesquisa"] = ""
 
+if "prestador_selecionado_id" not in st.session_state:
+    st.session_state["prestador_selecionado_id"] = None
+
 def main():
     # --- CABEÇALHO SUPERIOR ---
     col_logo, col_search, col_user = st.columns([2.5, 6, 2])
     
     with col_logo:
-        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=180)
+        st.image("https://cdn.phototourl.com/member/2026-09-30-c5a53c21-f2c4-49d9-b4f4-9c0bb984b1fd.jpg", width=160)
+        # Botão Menu / Início logo abaixo do logótipo
+        if st.button("🏠 Menu / Página Inicial", use_container_width=True):
+            st.session_state["pagina_atual"] = "🏠 Página Inicial"
+            st.session_state["prestador_selecionado_id"] = None
+            st.rerun()
         
     with col_search:
         st.session_state["termo_pesquisa"] = st.text_input("Pesquisa Geral", placeholder="Pesquisar artigos ou prestadores...", value=st.session_state["termo_pesquisa"], label_visibility="collapsed")
@@ -162,17 +171,23 @@ def main():
         
         if "Registar" in acao_utilizador:
             st.session_state["pagina_atual"] = "📝 Registar Empresa"
+            st.session_state["prestador_selecionado_id"] = None
         elif "Prestador" in acao_utilizador:
             st.session_state["pagina_atual"] = "🔐 Login Prestador"
+            st.session_state["prestador_selecionado_id"] = None
         elif "Administração" in acao_utilizador:
             st.session_state["pagina_atual"] = "⚙️ Administração"
+            st.session_state["prestador_selecionado_id"] = None
         elif "Entrar" in acao_utilizador and st.session_state["pagina_atual"] not in ["🏠 Página Inicial"]:
             st.session_state["pagina_atual"] = "🏠 Página Inicial"
+            st.session_state["prestador_selecionado_id"] = None
 
     st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
     # --- ROTEAMENTO DAS PÁGINAS ---
-    if st.session_state["pagina_atual"] == "🏠 Página Inicial":
+    if st.session_state.get("prestador_selecionado_id") is not None:
+        mostrar_detalhe_prestador()
+    elif st.session_state["pagina_atual"] == "🏠 Página Inicial":
         mostrar_pagina_inicial()
     elif st.session_state["pagina_atual"] == "📝 Registar Empresa":
         mostrar_registo()
@@ -196,9 +211,34 @@ def mostrar_pagina_inicial():
     st.markdown(f"<small>A filtrar por categoria: <b>{st.session_state['filtro_subcat']}</b></small>", unsafe_allow_html=True)
     st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
 
-    st.markdown("### Disponíveis para alugar / prestação")
-    
     prestadores_aprovados = [p for p in st.session_state["prestadores"] if p.get("status") == "Aprovado"]
+
+    # --- SLIDER / DESTAQUE SE ESCOLHER "Tudo" ---
+    if st.session_state["filtro_subcat"] == "Tudo":
+        st.markdown("### 🌟 Destaques em Doutrina / Slider de Categorias")
+        
+        # Selecionar um prestador por categoria existente (se disponível)
+        categorias_disponiveis = list(set([p["categoria"] for p in prestadores_aprovados]))
+        if categorias_disponiveis:
+            cols_slider = st.columns(min(len(categorias_disponiveis), 4))
+            for idx_s, cat in enumerate(categorias_disponiveis[:4]):
+                exemplo_cat = next((p for p in prestadores_aprovados if p["categoria"] == cat), None)
+                if exemplo_cat:
+                    with cols_slider[idx_s]:
+                        st.markdown(f"""
+                            <div class="product-card" style="padding: 10px; text-align: center;">
+                                <span style="font-size: 30px;">🏷️</span>
+                                <div style="font-size: 13px; font-weight: bold; color: #FF5722;">Categoria: {cat}</div>
+                                <div class="product-title">{exemplo_cat['nome_empresa']}</div>
+                                <div class="product-loc">📍 {exemplo_cat['localizacao']}</div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        if st.button(f"Ver {exemplo_cat['nome_empresa']}", key=f"slider_btn_{exemplo_cat['id']}"):
+                            st.session_state["prestador_selecionado_id"] = exemplo_cat['id']
+                            st.rerun()
+        st.markdown("<hr style='margin: 15px 0px 20px 0px; border: 0.5px solid #EAEAEA;'>", unsafe_allow_html=True)
+
+    st.markdown("### Catálogo Geral / Prestadores Disponíveis")
 
     filtro = st.session_state["filtro_subcat"]
     if filtro != "Tudo":
@@ -217,26 +257,65 @@ def mostrar_pagina_inicial():
         with col_atual:
             st.markdown(f"""
                 <div class="product-card">
-                    <div style="position: relative; background-color: #f8f9fa; height: 160px; display: flex; align-items: center; justify-content: center;">
-                        <span style="font-size: 35px;">📦</span>
+                    <div style="position: relative; background-color: #f8f9fa; height: 140px; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 30px;">📦</span>
                         <span class="badge-caucao">Verificado</span>
                         <span class="badge-empresa">{p.get('especialidade', p['categoria'])}</span>
                     </div>
                     <div class="product-title">{p['nome_empresa']}</div>
                     <div class="product-loc">Contacto: {p['telefone']}</div>
                     <div style="font-size: 11px; color: #555; margin: 0 12px 6px 12px;">📍 {p['localizacao']}</div>
-                    <div class="product-price">Sob Consulta</div>
                 </div>
             """, unsafe_allow_html=True)
+            if st.button("Ver Perfil Completo", key=f"ver_perfil_{p['id']}", use_container_width=True):
+                st.session_state["prestador_selecionado_id"] = p['id']
+                st.rerun()
+
+def mostrar_detalhe_prestador():
+    p_id = st.session_state["prestador_selecionado_id"]
+    prestador = next((p for p in st.session_state["prestadores"] if p["id"] == p_id), None)
+    
+    if not prestador:
+        st.error("Empresa ou prestador não encontrado.")
+        if st.button("Voltar ao Menu"):
+            st.session_state["prestador_selecionado_id"] = None
+            st.rerun()
+        return
+
+    if st.button("← Voltar à Lista / Página Inicial"):
+        st.session_state["prestador_selecionado_id"] = None
+        st.rerun()
+
+    st.markdown(f"# 🏢 {prestador['nome_empresa']}")
+    st.markdown(f"**Categoria:** {prestador['categoria']} | **Especialidade:** `{prestador.get('especialidade', 'Geral')}`")
+    st.markdown(f"📍 **Localização:** {prestador['localizacao']}")
+    st.markdown(f"📞 **Contacto Principal:** {prestador['telefone']} | **Contacto Alternativo:** {prestador.get('nome_contacto_alt', 'N/A')} ({prestador.get('contacto_alternativo', 'N/A')})")
+    
+    st.markdown("### 📝 Descrição dos Serviços")
+    st.write(prestador.get('sobre_empresa', 'Sem descrição fornecida.'))
+
+    st.markdown("---")
+    st.markdown("### 🖼️ Galeria de Fotografias e Legendas")
+    fotos = prestador.get("fotos", [])
+    
+    if not fotos:
+        st.info("Este prestador ainda não carregou fotografias.")
+    else:
+        cols_f = st.columns(3)
+        for idx_f, foto in enumerate(fotos):
+            with cols_f[idx_f % 3]:
+                st.markdown(f"""
+                    <div style="border: 1px solid #EAEAEA; border-radius: 8px; padding: 10px; background-color: #FAFAFA; margin-bottom: 15px;">
+                        <div style="font-size: 13px; font-weight: bold; color: #333;">📸 {foto.get('nome_ficheiro', f'Foto {idx_f+1}')}</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 5px; font-style: italic;">Legenda: {foto.get('legenda', 'Sem legenda')}</div>
+                    </div>
+                """, unsafe_allow_html=True)
 
 def mostrar_registo():
     st.header("📝 Registo de Novo Prestador / Empresa")
     st.write("Preencha os campos abaixo. As especialidades atualizam-se de forma estrita conforme a categoria escolhida.")
 
-    # Usamos st.selectbox fora do form para atualizar dinamicamente a especialidade sem conflito de cache
     categoria = st.selectbox("Categoria Principal*", list(ESPECIALIDADES_POR_CATEGORIA.keys()))
-    
-    # Lista estrita correspondente à categoria selecionada
     opcoes_especialidade = ESPECIALIDADES_POR_CATEGORIA.get(categoria, ["Geral"])
 
     with st.form("form_registo"):
@@ -249,7 +328,6 @@ def mostrar_registo():
             password = st.text_input("Palavra-passe (Password)*", type="password")
             confirmar_password = st.text_input("Confirmar Palavra-passe*", type="password")
             
-        # Especialidade restrita estritamente à categoria escolhida acima
         especialidade = st.selectbox("Especialidade da Categoria*", opcoes_especialidade)
 
         st.markdown("---")
@@ -295,7 +373,7 @@ def mostrar_registo():
 
 def mostrar_login_prestador():
     st.header("🔐 Área Restrita do Prestador")
-    st.write("Aceda para gerir os seus dados, serviços e carregar/apagar livremente as suas fotos (limite de 20).")
+    st.write("Aceda para gerir os seus dados, ver as suas fotos publicadas, adicionar legendas e carregar/apagar livremente (limite de 20).")
 
     with st.form("form_login"):
         nome_pesquisa = st.text_input("Nome e Sobrenome/Empresa")
@@ -331,7 +409,7 @@ def mostrar_login_prestador():
                     st.success("Alterações guardadas com sucesso!")
 
             st.markdown("---")
-            st.markdown("### 🖼️ Gestão de Fotografias (Até 20 fotos)")
+            st.markdown("### 🖼️ Gestão de Fotografias e Legendas (Até 20 fotos)")
             st.write(f"Fotos atuais carregadas: **{len(p_atual.get('fotos', []))} / 20**")
 
             novas_fotos = st.file_uploader("Carregar novas fotografias", type=["jpg", "png", "jpeg"], accept_multiple_files=True, key="uploader_fotos")
@@ -342,19 +420,24 @@ def mostrar_login_prestador():
                     st.error("Limite excedido! O máximo permitido é de 20 fotografias.")
                 else:
                     for f in novas_fotos:
-                        fotos_atuais.append({"nome_ficheiro": f.name})
+                        fotos_atuais.append({"nome_ficheiro": f.name, "legenda": ""})
                     p_atual["fotos"] = fotos_atuais
                     guardar_dados(st.session_state["prestadores"])
                     st.success("Fotos carregadas com sucesso!")
                     st.rerun()
 
             if p_atual.get("fotos"):
-                st.markdown("#### Fotografias Guardadas (Pode remover indesejadas):")
+                st.markdown("#### Fotografias Publicadas (Adicione ou edite legendas e remova se desejar):")
                 for idx_f, foto in enumerate(p_atual["fotos"]):
-                    col_f1, col_f2 = st.columns([4, 1])
+                    col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
                     with col_f1:
                         st.write(f"📸 {foto.get('nome_ficheiro', f'Foto {idx_f+1}')}")
                     with col_f2:
+                        nova_legenda = st.text_input(f"Legenda foto {idx_f+1}", value=foto.get("legenda", ""), key=f"leg_input_{idx_f}")
+                        if nova_legenda != foto.get("legenda", ""):
+                            foto["legenda"] = nova_legenda
+                            guardar_dados(st.session_state["prestadores"])
+                    with col_f3:
                         if st.button("Apagar", key=f"del_foto_{idx_f}"):
                             p_atual["fotos"].pop(idx_f)
                             guardar_dados(st.session_state["prestadores"])
